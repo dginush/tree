@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>🌳 הורדת פרויקט עץ משפחתי v3</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,'Segoe UI',sans-serif;background:linear-gradient(135deg,#1B5E20,#4CAF50,#81C784);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+        .card{background:#fff;border-radius:28px;padding:50px;max-width:600px;width:100%;box-shadow:0 25px 80px rgba(0,0,0,.3);text-align:center}
+        .icon{font-size:5em;margin-bottom:15px}
+        h1{font-size:2em;color:#1B5E20;margin-bottom:8px}
+        p{color:#666;margin-bottom:30px;line-height:1.6}
+        .config-section{background:#FFF8E1;border:2px solid #FFE082;border-radius:16px;padding:20px;margin-bottom:25px;text-align:right}
+        .config-section h3{color:#F57F17;margin-bottom:12px}
+        .field{margin-bottom:10px}
+        .field label{display:block;font-weight:600;font-size:.88em;margin-bottom:4px;color:#333}
+        .field input{width:100%;padding:10px 14px;border:2px solid #ddd;border-radius:10px;font-size:.92em;direction:ltr;text-align:left}
+        .field input:focus{outline:none;border-color:#4CAF50}
+        .btn{background:linear-gradient(135deg,#2E7D32,#66BB6A);color:#fff;border:none;padding:16px 40px;border-radius:14px;font-size:1.2em;font-weight:700;cursor:pointer;transition:all .3s;box-shadow:0 6px 25px rgba(46,125,50,.4)}
+        .btn:hover{transform:translateY(-3px);box-shadow:0 10px 35px rgba(46,125,50,.5)}
+        .features{text-align:right;margin:20px 0;background:#E8F5E9;border-radius:12px;padding:15px;font-size:.9em}
+        .features div{padding:4px 0;color:#2E7D32}
+        .success{color:#2E7D32;font-size:1.1em;font-weight:600;margin-top:15px}
+        .new-badge{background:#f44336;color:#fff;padding:2px 8px;border-radius:10px;font-size:.7em;font-weight:700;vertical-align:middle}
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="icon">🌳</div>
+    <h1>מחולל עץ משפחתי v3</h1>
+    <p>כולל לוח שנה ימי הולדת <span class="new-badge">חדש!</span></p>
+
+    <div class="features">
+        <div>✅ התחברות עם Google / אימייל</div>
+        <div>✅ שיתוף עם בני משפחה (קוד/קישור)</div>
+        <div>✅ הרשאות: בעלים / עורך / צופה</div>
+        <div>✅ עץ משפחתי ויזואלי עם גרירה לקישור</div>
+        <div>✅ המרת תאריך עברי אוטומטית</div>
+        <div>✅ אירועים משפחתיים</div>
+        <div>🆕 <strong>לוח שנה ימי הולדת</strong> - תצוגה חודשית/שנתית</div>
+        <div>✅ סנכרון בזמן אמת עם Firebase</div>
+    </div>
+
+    <div class="config-section">
+        <h3>🔥 פרטי Firebase</h3>
+        <div class="field"><label>API Key</label><input type="text" id="apiKey" placeholder="AIzaSyB..."></div>
+        <div class="field"><label>Auth Domain</label><input type="text" id="authDomain" placeholder="your-project.firebaseapp.com"></div>
+        <div class="field"><label>Project ID</label><input type="text" id="projectId" placeholder="your-project-id"></div>
+        <div class="field"><label>Storage Bucket</label><input type="text" id="storageBucket" placeholder="your-project.appspot.com"></div>
+        <div class="field"><label>Messaging Sender ID</label><input type="text" id="senderId" placeholder="123456789"></div>
+        <div class="field"><label>App ID</label><input type="text" id="appId" placeholder="1:123...:web:abc..."></div>
+        <small style="color:#999">💡 אין לך עדיין? תוכל למלא אחר כך בקובץ firebase-config.js</small>
+    </div>
+
+    <button class="btn" id="downloadBtn" onclick="generateZip()">📦 הורד ZIP</button>
+    <div id="status"></div>
+</div>
+
+<script>
+async function generateZip(){
+    const btn=document.getElementById('downloadBtn');
+    const status=document.getElementById('status');
+    btn.style.opacity='.7';
+    btn.textContent='⏳ יוצר...';
+
+    const cfg={
+        apiKey:document.getElementById('apiKey').value.trim()||'YOUR_API_KEY',
+        authDomain:document.getElementById('authDomain').value.trim()||'YOUR_PROJECT.firebaseapp.com',
+        projectId:document.getElementById('projectId').value.trim()||'YOUR_PROJECT_ID',
+        storageBucket:document.getElementById('storageBucket').value.trim()||'YOUR_PROJECT.appspot.com',
+        senderId:document.getElementById('senderId').value.trim()||'YOUR_SENDER_ID',
+        appId:document.getElementById('appId').value.trim()||'YOUR_APP_ID'
+    };
+
+    const zip=new JSZip();
+    const root=zip.folder('family-tree');
+    const cssDir=root.folder('css');
+    const jsDir=root.folder('js');
+
+    root.file('index.html', buildIndexHTML());
+    root.file('firestore.rules', buildFirestoreRules());
+    cssDir.file('styles.css', buildCSS());
+    jsDir.file('firebase-config.js', buildFirebaseConfig(cfg));
+    jsDir.file('sharing.js', buildSharing());
+    jsDir.file('auth.js', buildAuth());
+    jsDir.file('hebrew-date.js', buildHebrewDate());
+    jsDir.file('events-manager.js', buildEventsManager());
+    jsDir.file('drag-connect.js', buildDragConnect());
+    jsDir.file('tree-renderer.js', buildTreeRenderer());
+    jsDir.file('birthday-calendar.js', buildBirthdayCalendar());
+    jsDir.file('app.js', buildApp());
+
+    try{
+        const blob=await zip.generateAsync({type:'blob'});
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download='family-tree-v3.zip';
+        a.click();
+        btn.textContent='✅ הורד!';
+        btn.style.opacity='1';
+        status.innerHTML='<div class="success">✅ ZIP הורד בהצלחה!</div>';
+        setTimeout(()=>{btn.textContent='📦 הורד ZIP'},3000);
+    }catch(e){
+        btn.textContent='❌ שגיאה';
+        btn.style.opacity='1';
+        status.innerHTML='<div style="color:red">'+e.message+'</div>';
+    }
+}
+
+// ============================================================
+// INDEX.HTML
+// ============================================================
+function buildIndexHTML(){
+return `<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🌳 עץ משפחתי</title>
+<link rel="stylesheet" href="css/styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="loginScreen" class="login-screen">
+<div class="login-card">
+<div class="login-logo">🌳</div>
+<h1 class="login-title">עץ משפחתי</h1>
+<p class="login-subtitle">התחבר כדי לנהל את עץ המשפחה</p>
+<div id="loginForm">
+<div class="login-field"><label>📧 אימייל</label><input type="email" id="loginEmail" placeholder="your@email.com"></div>
+<div class="login-field"><label>🔒 סיסמה</label><input type="password" id="loginPassword" placeholder="סיסמה"></div>
+<div id="loginError" class="login-error" style="display:none"></div>
+<button class="login-btn primary" onclick="Auth.login()">📧 התחברות</button>
+<button class="login-btn google" onclick="Auth.loginWithGoogle()">🔵 Google</button>
+<div class="login-divider"><span>חדש?</span></div>
+<button class="login-btn secondary" onclick="Auth.showRegister()">✨ הרשמה</button>
+</div>
+<div id="registerForm" style="display:none">
+<div class="login-field"><label>👤 שם</label><input type="text" id="registerName"></div>
+<div class="login-field"><label>📧 אימייל</label><input type="email" id="registerEmail"></div>
+<div class="login-field"><label>🔒 סיסמה</label><input type="password" id="registerPassword" placeholder="לפחות 6 תווים"></div>
+<div class="login-field"><label>🔒 אימות</label><input type="password" id="registerPassword2"></div>
+<div id="registerError" class="login-error" style="display:none"></div>
+<button class="login-btn primary" onclick="Auth.register()">✨ הרשמה</button>
+<button class="login-btn secondary" onclick="Auth.showLogin()">→ חזרה</button>
+</div>
+<button class="login-link" onclick="Auth.forgotPassword()">שכחתי סיסמה</button>
+</div>
+</div>
+
+<div id="treeSelectScreen" style="display:none">
+<div class="tree-select-screen">
+<div class="tree-select-card">
+<div style="font-size:3em;margin-bottom:10px">🌳</div>
+<h1>שלום, <span id="treeSelectUserName"></span>!</h1>
+<p style="color:#888;margin-bottom:30px">מה תרצה לעשות?</p>
+<div class="tree-select-option">
+<div class="tree-select-option-header" onclick="this.parentElement.classList.toggle('open')">
+<span>🌱</span><div><strong>עץ חדש</strong><small>צור ושתף</small></div><span class="tree-select-arrow">◀</span>
+</div>
+<div class="tree-select-option-body">
+<div class="form-group" style="margin-bottom:14px"><label class="form-label">שם העץ</label>
+<input type="text" class="form-input" id="newTreeName" placeholder="משפחת כהן"></div>
+<button class="btn btn-primary" style="width:100%" onclick="createNewTree()">🌳 צור</button>
+</div>
+</div>
+<div class="tree-select-option">
+<div class="tree-select-option-header" onclick="this.parentElement.classList.toggle('open')">
+<span>🔗</span><div><strong>הצטרף לעץ</strong><small>עם קוד הזמנה</small></div><span class="tree-select-arrow">◀</span>
+</div>
+<div class="tree-select-option-body">
+<div class="form-group" style="margin-bottom:14px"><label class="form-label">קוד</label>
+<input type="text" class="form-input" id="joinTreeCode" maxlength="6"
+style="text-transform:uppercase;text-align:center;font-size:1.4em;letter-spacing:6px;font-weight:800"></div>
+<button class="btn btn-primary" style="width:100%" onclick="joinExistingTree()">🔗 הצטרף</button>
+</div>
+</div>
+<button class="login-link" style="margin-top:20px" onclick="Auth.logout()">🚪 יציאה</button>
+</div>
+</div>
+</div>
+
+<div id="appContainer" style="display:none">
+<header class="header">
+<div class="header-content">
+<div class="logo"><span class="logo-icon">🌳</span><span>עץ משפחתי</span>
+<span id="currentTreeName" class="tree-name-header"></span>
+<span id="roleBadge" class="role-badge"></span></div>
+<div class="header-actions">
+<div class="sync-status" id="syncStatus"><span class="sync-dot synced"></span><span class="sync-text">מסונכרן</span></div>
+<button class="header-btn" onclick="Sharing.openSharingModal()">🔗 שיתוף</button>
+<div class="user-menu" id="userMenu">
+<div class="user-avatar" id="userAvatar" onclick="Auth.toggleUserMenu()">👤</div>
+<div class="user-dropdown" id="userDropdown">
+<div class="user-info"><strong id="userName">-</strong><small id="userEmail">-</small></div><hr>
+<button onclick="App.exportData()">📥 ייצוא</button>
+<button onclick="document.getElementById('importFile').click()">📤 ייבוא</button>
+<input type="file" id="importFile" accept=".json" style="display:none" onchange="App.importData(event)"><hr>
+<button onclick="Auth.logout()" class="danger">🚪 יציאה</button>
+</div>
+</div>
+</div>
+</div>
+<nav class="nav-tabs">
+<div class="nav-tab active" data-page="dashboard" onclick="App.switchPage('dashboard')">📊 לוח בקרה</div>
+<div class="nav-tab" data-page="members" onclick="App.switchPage('members')">👥 בני משפחה</div>
+<div class="nav-tab" data-page="tree" onclick="App.switchPage('tree')">🌲 עץ</div>
+<div class="nav-tab" data-page="birthdays" onclick="App.switchPage('birthdays')">🎂 ימי הולדת</div>
+<div class="nav-tab" data-page="events" onclick="App.switchPage('events')">🎉 אירועים</div>
+</nav>
+</header>
+<main class="main">
+<!-- Dashboard -->
+<div id="page-dashboard" class="page active">
+<div class="stats-bar" id="statsBar"></div>
+<div class="dashboard-grid">
+<div class="card"><div class="card-header"><div class="card-title">👥 אחרונים</div>
+<button class="btn btn-primary btn-sm" onclick="App.openAddModal()">➕</button></div>
+<div id="recentMembers"></div></div>
+<div class="card"><div class="card-header"><div class="card-title">🎂 ימי הולדת קרובים</div></div>
+<div id="upcomingBirthdays"></div></div>
+</div>
+</div>
+<!-- Members -->
+<div id="page-members" class="page">
+<div class="card"><div class="card-header"><div class="card-title">👥 בני משפחה</div>
+<button class="btn btn-primary" onclick="App.openAddModal()">➕ הוספה</button></div>
+<div class="search-container"><input type="text" class="search-input" id="searchInput" placeholder="חיפוש..." oninput="App.filterMembers()"><span class="search-icon">🔍</span></div>
+<div class="members-grid" id="membersGrid"></div></div>
+</div>
+<!-- Tree -->
+<div id="page-tree" class="page">
+<div class="card tree-page-card"><div class="card-header"><div class="card-title">🌲 עץ</div></div>
+<div class="tree-toolbar">
+<div class="toolbar-group"><label>שורש:</label><select class="form-select compact" id="treeRoot" onchange="TreeRenderer.render()"></select></div>
+<div class="toolbar-group"><label>רמות:</label><div class="level-buttons">
+<button class="level-btn" onclick="TreeRenderer.setLevel(1,this)">1</button>
+<button class="level-btn" onclick="TreeRenderer.setLevel(2,this)">2</button>
+<button class="level-btn active" onclick="TreeRenderer.setLevel(3,this)">3</button>
+<button class="level-btn" onclick="TreeRenderer.setLevel(4,this)">4</button>
+<button class="level-btn" onclick="TreeRenderer.setLevel(5,this)">5</button>
+<button class="level-btn" onclick="TreeRenderer.setLevel(100,this)">∞</button>
+</div></div>
+<label class="checkbox-label"><input type="checkbox" id="showDivorced" checked onchange="TreeRenderer.render()"> 💔</label>
+<label class="checkbox-label"><input type="checkbox" id="showDeceased" checked onchange="TreeRenderer.render()"> 🕯️</label>
+<div class="toolbar-divider"></div>
+<button class="btn btn-outline btn-sm" id="connectModeBtn" onclick="DragConnect.toggleMode()">🔗 קישור</button>
+</div>
+<div class="connect-instructions" id="connectInstructions" style="display:none"><span>🔗</span><span>גרור בין בני משפחה. ESC לביטול.</span></div>
+<div class="tree-container" id="treeContainer"><div class="tree-wrapper" id="treeWrapper"></div></div>
+</div>
+</div>
+<!-- BIRTHDAYS CALENDAR - NEW! -->
+<div id="page-birthdays" class="page">
+<div class="card">
+<div class="card-header">
+<div class="card-title">🎂 לוח ימי הולדת</div>
+<div class="calendar-nav">
+<button class="btn btn-outline btn-sm" onclick="BirthdayCalendar.prevMonth()">◀</button>
+<span class="calendar-month-label" id="calendarMonthLabel"></span>
+<button class="btn btn-outline btn-sm" onclick="BirthdayCalendar.nextMonth()">▶</button>
+<button class="btn btn-outline btn-sm" onclick="BirthdayCalendar.goToday()">היום</button>
+<div class="toolbar-divider"></div>
+<button class="btn btn-sm calendar-view-btn active" id="viewMonthBtn" onclick="BirthdayCalendar.setView('month')">📅 חודשי</button>
+<button class="btn btn-sm calendar-view-btn" id="viewYearBtn" onclick="BirthdayCalendar.setView('year')">📊 שנתי</button>
+<button class="btn btn-sm calendar-view-btn" id="viewListBtn" onclick="BirthdayCalendar.setView('list')">📋 רשימה</button>
+</div>
+</div>
+<div id="calendarContent"></div>
+</div>
+</div>
+<!-- Events -->
+<div id="page-events" class="page">
+<div class="card"><div class="card-header"><div class="card-title">🎉 אירועים</div>
+<button class="btn btn-primary" onclick="EventsManager.openAddEvent()">➕ אירוע</button></div>
+<div class="events-filters">
+<button class="filter-chip active" onclick="EventsManager.filter('all',this)">הכל</button>
+<button class="filter-chip" onclick="EventsManager.filter('birthday',this)">🎂</button>
+<button class="filter-chip" onclick="EventsManager.filter('wedding',this)">💒</button>
+<button class="filter-chip" onclick="EventsManager.filter('barMitzvah',this)">📖</button>
+<button class="filter-chip" onclick="EventsManager.filter('memorial',this)">🕯️</button>
+<button class="filter-chip" onclick="EventsManager.filter('other',this)">📌</button>
+</div>
+<div id="eventsList"></div></div>
+</div>
+</main>
+</div>
+
+<!-- All Modals -->
+<div class="modal-overlay" id="memberModal"><div class="modal"><div class="modal-header"><div class="modal-title" id="modalTitle">➕ הוספה</div><button class="modal-close" onclick="App.closeModal('memberModal')">✕</button></div>
+<form id="memberForm" onsubmit="App.saveMember(event)"><input type="hidden" id="memberId">
+<div class="photo-upload-section"><div class="photo-preview" onclick="document.getElementById('photoInput').click()"><span class="placeholder" id="photoPlaceholder">📷</span><img id="photoPreviewImg" style="display:none"><div class="overlay">📷</div></div><input type="file" id="photoInput" accept="image/*" style="display:none" onchange="App.handlePhotoUpload(event)"></div>
+<div class="form-section"><div class="section-title">פרטים בסיסיים <span class="required-note">* חובה</span></div>
+<div class="form-grid-2">
+<div class="form-group"><label class="form-label">שם פרטי <span class="required">*</span></label><input type="text" class="form-input" id="firstName" required></div>
+<div class="form-group"><label class="form-label">שם משפחה <span class="required">*</span></label><input type="text" class="form-input" id="lastName" required></div>
+<div class="form-group"><label class="form-label">מין <span class="required">*</span></label><select class="form-select" id="gender" required onchange="App.updateRelationOptions()"><option value="">--</option><option value="male">👨 זכר</option><option value="female">👩 נקבה</option></select></div>
+<div class="form-group"><label class="form-label">תאריך לידה <span class="required">*</span></label><input type="text" class="form-input" id="birthDate" required placeholder="dd/mm/yyyy" maxlength="10" oninput="App.formatDateInput(this)"></div>
+<div class="form-group"><label class="form-label">קרבה <span class="required">*</span></label><select class="form-select" id="relationType" required><option value="">-- בחר מין --</option></select></div>
+<div class="form-group"><label class="form-label">הורה</label><select class="form-select" id="parentId"><option value="">-- ללא --</option></select></div>
+</div></div>
+<div class="expandable-section"><button type="button" class="expand-toggle" onclick="App.toggleExtraFields()"><span class="expand-icon" id="expandIcon">◀</span> שדות נוספים</button>
+<div class="extra-fields" id="extraFields" style="display:none"><div class="form-grid-2">
+<div class="form-group"><label class="form-label">💑 בן/בת זוג</label><select class="form-select" id="spouseId"><option value="">--</option></select></div>
+<div class="form-group"><label class="form-label">🕯️ סטטוס</label><select class="form-select" id="status" onchange="App.toggleDeathDate()"><option value="alive">בחיים</option><option value="deceased">נפטר/ה</option></select></div>
+<div class="form-group" id="deathDateGroup" style="display:none"><label class="form-label">תאריך פטירה</label><input type="text" class="form-input" id="deathDate" placeholder="dd/mm/yyyy" maxlength="10" oninput="App.formatDateInput(this)"></div>
+<div class="form-group"><label class="form-label">📍 מקום לידה</label><input type="text" class="form-input" id="birthPlace"></div>
+<div class="form-group"><label class="form-label">📱 טלפון</label><input type="tel" class="form-input" id="phone"></div>
+<div class="form-group"><label class="form-label">📧 אימייל</label><input type="email" class="form-input" id="email"></div>
+<div class="form-group"><label class="form-label">📍 כתובת</label><input type="text" class="form-input" id="address"></div>
+<div class="form-group"><label class="form-label">💼 מקצוע</label><input type="text" class="form-input" id="occupation"></div>
+<div class="form-group full-width"><label class="form-label">📝 הערות</label><textarea class="form-textarea" id="notes"></textarea></div>
+</div></div></div>
+<div class="modal-footer"><button type="button" class="btn btn-outline" onclick="App.closeModal('memberModal')">ביטול</button><button type="submit" class="btn btn-primary">💾 שמירה</button></div>
+</form></div></div>
+
+<div class="modal-overlay" id="eventModal"><div class="modal"><div class="modal-header"><div class="modal-title" id="eventModalTitle">🎉 אירוע</div><button class="modal-close" onclick="App.closeModal('eventModal')">✕</button></div>
+<form id="eventForm" onsubmit="EventsManager.saveEvent(event)"><input type="hidden" id="eventId">
+<div class="form-grid-2">
+<div class="form-group full-width"><label class="form-label">שם <span class="required">*</span></label><input type="text" class="form-input" id="eventName" required></div>
+<div class="form-group"><label class="form-label">סוג <span class="required">*</span></label><select class="form-select" id="eventType" required><option value="">--</option><option value="birthday">🎂 יום הולדת</option><option value="wedding">💒 חתונה</option><option value="barMitzvah">📖 בר/בת מצווה</option><option value="memorial">🕯️ אזכרה</option><option value="holiday">🕎 חג</option><option value="other">📌 אחר</option></select></div>
+<div class="form-group"><label class="form-label">תאריך <span class="required">*</span></label><input type="text" class="form-input" id="eventDate" required placeholder="dd/mm/yyyy" maxlength="10" oninput="App.formatDateInput(this)"></div>
+<div class="form-group"><label class="form-label">שעה</label><input type="time" class="form-input" id="eventTime"></div>
+<div class="form-group"><label class="form-label">מיקום</label><input type="text" class="form-input" id="eventLocation"></div>
+<div class="form-group full-width"><label class="form-label">משתתפים</label><select class="form-select" id="eventParticipants" multiple style="min-height:80px"></select></div>
+<div class="form-group full-width"><label class="form-label">תיאור</label><textarea class="form-textarea" id="eventDescription"></textarea></div>
+<div class="form-group"><label class="form-label">חוזר?</label><select class="form-select" id="eventRecurring"><option value="no">לא</option><option value="yearly">שנתי</option></select></div>
+</div>
+<div class="modal-footer"><button type="button" class="btn btn-outline" onclick="App.closeModal('eventModal')">ביטול</button><button type="submit" class="btn btn-primary">💾 שמירה</button></div>
+</form></div></div>
+
+<div class="modal-overlay" id="connectModal"><div class="modal" style="max-width:450px"><div class="modal-header"><div class="modal-title">🔗 קישור</div><button class="modal-close" onclick="App.closeModal('connectModal')">✕</button></div><div id="connectContent"></div></div></div>
+<div class="modal-overlay" id="viewModal"><div class="modal"><div class="modal-header"><div class="modal-title">👤 פרטים</div><button class="modal-close" onclick="App.closeModal('viewModal')">✕</button></div><div id="viewContent"></div></div></div>
+<div class="modal-overlay" id="confirmModal"><div class="modal" style="max-width:400px"><div class="confirm-dialog"><div class="icon">⚠️</div><h3 id="confirmTitle">בטוח?</h3><p id="confirmMessage"></p><div class="confirm-actions"><button class="btn btn-outline" onclick="App.closeModal('confirmModal')">ביטול</button><button class="btn btn-danger" id="confirmBtn">מחיקה</button></div></div></div></div>
+<div class="modal-overlay" id="sharingModal"><div class="modal" style="max-width:520px"><div class="modal-header"><div class="modal-title">🔗 שיתוף</div><button class="modal-close" onclick="App.closeModal('sharingModal')">✕</button></div><div id="sharingContent"></div></div></div>
+<div class="modal-overlay" id="birthdayDetailModal"><div class="modal" style="max-width:400px"><div class="modal-header"><div class="modal-title">🎂 יום הולדת</div><button class="modal-close" onclick="App.closeModal('birthdayDetailModal')">✕</button></div><div id="birthdayDetailContent"></div></div></div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"><\\/script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"><\\/script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"><\\/script>
+<script src="js/firebase-config.js"><\\/script>
+<script src="js/sharing.js"><\\/script>
+<script src="js/auth.js"><\\/script>
+<script src="js/hebrew-date.js"><\\/script>
+<script src="js/events-manager.js"><\\/script>
+<script src="js/drag-connect.js"><\\/script>
+<script src="js/tree-renderer.js"><\\/script>
+<script src="js/birthday-calendar.js"><\\/script>
+<script src="js/app.js"><\\/script>
+</body>
+</html>`;
+}
+
+// ============================================================
+// BIRTHDAY CALENDAR MODULE - THE NEW FILE!
+// ============================================================
+function buildBirthdayCalendar(){
+return `const BirthdayCalendar=(()=>{
+let currentMonth=new Date().getMonth();
+let currentYear=new Date().getFullYear();
+let currentView='month';
+
+const HEB_MONTHS=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const HEB_DAYS=['א\\'','ב\\'','ג\\'','ד\\'','ה\\'','ו\\'','ש\\''];
+const ZODIAC=['♑','♒','♓','♈','♉','♊','♋','♌','♍','♎','♏','♐'];
+const ZODIAC_NAMES=['גדי','דלי','דגים','טלה','שור','תאומים','סרטן','אריה','בתולה','מאזניים','עקרב','קשת'];
+
+function parseBirthDate(str){
+    if(!str)return null;
+    const p=str.split('/');
+    if(p.length!==3)return null;
+    return{day:parseInt(p[0]),month:parseInt(p[1])-1,year:parseInt(p[2])};
+}
+
+function getBirthdaysForMonth(month,year){
+    const members=App.getMembers();
+    return members.filter(m=>{
+        if(!m.birthDate||m.status==='deceased')return false;
+        const bd=parseBirthDate(m.birthDate);
+        return bd&&bd.month===month;
+    }).map(m=>{
+        const bd=parseBirthDate(m.birthDate);
+        const age=year-bd.year;
+        const heb=HebrewDate.fromDateString(m.birthDate);
+        return{...m,birthDay:bd.day,birthMonth:bd.month,birthYear:bd.year,turnsAge:age,hebrewDate:heb};
+    }).sort((a,b)=>a.birthDay-b.birthDay);
+}
+
+function getBirthdaysForYear(year){
+    const all=[];
+    for(let m=0;m<12;m++){
+        const bdays=getBirthdaysForMonth(m,year);
+        all.push({month:m,birthdays:bdays});
+    }
+    return all;
+}
+
+function daysInMonth(month,year){return new Date(year,month+1,0).getDate();}
+function firstDayOfMonth(month,year){return new Date(year,month,1).getDay();}
+
+function render(){
+    updateLabel();
+    if(currentView==='month')renderMonth();
+    else if(currentView==='year')renderYear();
+    else renderList();
+}
+
+function updateLabel(){
+    const el=document.getElementById('calendarMonthLabel');
+    if(!el)return;
+    if(currentView==='year')el.textContent=currentYear.toString();
+    else el.textContent=HEB_MONTHS[currentMonth]+' '+currentYear;
+}
+
+function renderMonth(){
+    const c=document.getElementById('calendarContent');
+    if(!c)return;
+
+    const birthdays=getBirthdaysForMonth(currentMonth,currentYear);
+    const bdayMap={};
+    birthdays.forEach(b=>{
+        if(!bdayMap[b.birthDay])bdayMap[b.birthDay]=[];
+        bdayMap[b.birthDay].push(b);
+    });
+
+    const days=daysInMonth(currentMonth,currentYear);
+    const firstDay=firstDayOfMonth(currentMonth,currentYear);
+    const today=new Date();
+    const isCurrentMonth=today.getMonth()===currentMonth&&today.getFullYear()===currentYear;
+
+    let html='<div class="calendar-grid">';
+    // Header
+    html+='<div class="calendar-header-row">';
+    HEB_DAYS.forEach(d=>html+='<div class="calendar-day-header">'+d+'</div>');
+    html+='</div>';
+
+    // Days grid
+    html+='<div class="calendar-days">';
+    // Empty cells before first day
+    for(let i=0;i<firstDay;i++)html+='<div class="calendar-cell empty"></div>';
+
+    for(let d=1;d<=days;d++){
+        const isToday=isCurrentMonth&&today.getDate()===d;
+        const hasBday=bdayMap[d];
+        const cellClass='calendar-cell'+(isToday?' today':'')+(hasBday?' has-birthday':'');
+
+        html+='<div class="'+cellClass+'">';
+        html+='<div class="cell-date'+(isToday?' today-date':'')+'">'+d+'</div>';
+
+        if(hasBday){
+            hasBday.forEach(b=>{
+                const bg=b.gender==='male'?'#E3F2FD':'#FCE4EC';
+                const color=b.gender==='male'?'#1565C0':'#C2185B';
+                html+='<div class="bday-chip" style="background:'+bg+';color:'+color+'" onclick="BirthdayCalendar.showDetail(\\''+b.id+'\\','+currentYear+')">';
+                html+='<span class="bday-chip-emoji">🎂</span>';
+                html+='<span class="bday-chip-name">'+b.firstName+'</span>';
+                html+='<span class="bday-chip-age">'+b.turnsAge+'</span>';
+                html+='</div>';
+            });
+        }
+        html+='</div>';
+    }
+    // Fill remaining cells
+    const totalCells=firstDay+days;
+    const remaining=7-(totalCells%7);
+    if(remaining<7)for(let i=0;i<remaining;i++)html+='<div class="calendar-cell empty"></div>';
+
+    html+='</div></div>';
+
+    // Summary below calendar
+    html+='<div class="birthday-summary">';
+    html+='<div class="summary-title">🎂 ימי הולדת ב'+HEB_MONTHS[currentMonth]+' ('+birthdays.length+')</div>';
+    if(birthdays.length===0){
+        html+='<div class="summary-empty">אין ימי הולדת החודש</div>';
+    }else{
+        html+='<div class="summary-list">';
+        birthdays.forEach(b=>{
+            const daysLeft=daysUntilBirthday(b.birthDate);
+            const bg=b.gender==='male'?'var(--male)':'var(--female)';
+            html+='<div class="summary-item" onclick="BirthdayCalendar.showDetail(\\''+b.id+'\\','+currentYear+')">';
+            html+='<div class="summary-avatar" style="background:'+bg+'">'+App.getInitials(b.firstName,b.lastName)+'</div>';
+            html+='<div class="summary-info"><div class="summary-name">'+b.firstName+' '+b.lastName+'</div>';
+            html+='<div class="summary-meta">'+b.birthDay+' '+HEB_MONTHS[currentMonth]+' • ימלא '+b.turnsAge;
+            if(b.hebrewDate)html+=' • 🕎 '+b.hebrewDate;
+            html+='</div></div>';
+            if(daysLeft===0)html+='<div class="summary-badge today-badge">🎉 היום!</div>';
+            else if(daysLeft>0&&daysLeft<=30)html+='<div class="summary-badge soon-badge">עוד '+daysLeft+' ימים</div>';
+            else html+='<div class="summary-badge">'+b.birthDay+'/'+String(currentMonth+1).padStart(2,'0')+'</div>';
+            html+='</div>';
+        });
+        html+='</div>';
+    }
+    html+='</div>';
+    c.innerHTML=html;
+}
+
+function renderYear(){
+    const c=document.getElementById('calendarContent');
+    if(!c)return;
+    const yearData=getBirthdaysForYear(currentYear);
+    let total=0;
+    yearData.forEach(m=>total+=m.birthdays.length);
+
+    let html='<div class="year-grid">';
+    yearData.forEach((md,idx)=>{
+        const count=md.birthdays.length;
+        const isCurrentMonth=new Date().getMonth()===idx&&new Date().getFullYear()===currentYear;
+        html+='<div class="year-month-card'+(isCurrentMonth?' current':'')+'" onclick="BirthdayCalendar.goToMonth('+idx+')">';
+        html+='<div class="year-month-name">'+HEB_MONTHS[idx]+'</div>';
+        html+='<div class="year-month-count">'+(count>0?count:'—')+'</div>';
+        html+='<div class="year-month-label">'+(count>0?'ימי הולדת':'')+'</div>';
+        if(count>0){
+            html+='<div class="year-month-faces">';
+            md.birthdays.slice(0,4).forEach(b=>{
+                const bg=b.gender==='male'?'var(--male)':'var(--female)';
+                html+='<div class="mini-face" style="background:'+bg+'" title="'+b.firstName+' '+b.lastName+' ('+b.turnsAge+')">'+b.firstName[0]+'</div>';
+            });
+            if(count>4)html+='<div class="mini-face more">+'+String(count-4)+'</div>';
+            html+='</div>';
+        }
+        html+='</div>';
+    });
+    html+='</div>';
+    html+='<div class="year-total">סה"כ '+total+' ימי הולדת ב-'+currentYear+'</div>';
+    c.innerHTML=html;
+}
+
+function renderList(){
+    const c=document.getElementById('calendarContent');
+    if(!c)return;
+    const members=App.getMembers().filter(m=>m.birthDate&&m.status!=='deceased');
+    const withDays=members.map(m=>{
+        const dl=daysUntilBirthday(m.birthDate);
+        const bd=parseBirthDate(m.birthDate);
+        const age=bd?new Date().getFullYear()-bd.year+(dl===0?0:dl<0?1:0):0;
+        const nextAge=bd?currentYear-bd.year:0;
+        const heb=HebrewDate.fromDateString(m.birthDate);
+        return{...m,daysLeft:dl,nextAge:age,hebrewDate:heb,bd};
+    }).sort((a,b)=>a.daysLeft-b.daysLeft);
+
+    let html='<div class="birthday-list-view">';
+    if(!withDays.length){
+        html+='<div class="empty-state"><div class="icon">🎂</div><h3>אין ימי הולדת</h3></div>';
+    }else{
+        withDays.forEach(m=>{
+            const bg=m.gender==='male'?'var(--male)':'var(--female)';
+            let badge='',badgeClass='';
+            if(m.daysLeft===0){badge='🎉 היום!';badgeClass='today-badge';}
+            else if(m.daysLeft===1){badge='מחר!';badgeClass='soon-badge';}
+            else if(m.daysLeft<=7){badge='עוד '+m.daysLeft+' ימים';badgeClass='soon-badge';}
+            else if(m.daysLeft<=30){badge='עוד '+m.daysLeft+' ימים';badgeClass='month-badge';}
+            else{badge='עוד '+m.daysLeft+' ימים';badgeClass='';}
+
+            html+='<div class="list-birthday-item" onclick="BirthdayCalendar.showDetail(\\''+m.id+'\\','+currentYear+')">';
+            html+='<div class="list-bday-avatar" style="background:'+bg+'">'+(m.photo?'<img src="'+m.photo+'">':App.getInitials(m.firstName,m.lastName))+'</div>';
+            html+='<div class="list-bday-info"><div class="list-bday-name">'+m.firstName+' '+m.lastName+'</div>';
+            html+='<div class="list-bday-date">📅 '+m.birthDate+(m.hebrewDate?' • 🕎 '+m.hebrewDate:'')+'</div>';
+            html+='<div class="list-bday-relation">'+(App.RELATION_LABELS[m.relationType]||'')+'</div></div>';
+            html+='<div class="list-bday-right"><div class="list-bday-age">'+m.nextAge+'</div><div style="font-size:.75em;color:var(--text-muted)">שנים</div>';
+            if(badge)html+='<div class="summary-badge '+badgeClass+'">'+badge+'</div>';
+            html+='</div></div>';
+        });
+    }
+    html+='</div>';
+    c.innerHTML=html;
+}
+
+function daysUntilBirthday(dateStr){
+    if(!dateStr)return 9999;
+    const bd=parseBirthDate(dateStr);
+    if(!bd)return 9999;
+    const today=new Date();today.setHours(0,0,0,0);
+    let next=new Date(today.getFullYear(),bd.month,bd.day);
+    if(next<today)next=new Date(today.getFullYear()+1,bd.month,bd.day);
+    return Math.ceil((next-today)/864e5);
+}
+
+function showDetail(memberId,year){
+    const m=App.getMembers().find(x=>x.id===memberId);
+    if(!m)return;
+    const bd=parseBirthDate(m.birthDate);
+    const age=bd?year-bd.year:0;
+    const dl=daysUntilBirthday(m.birthDate);
+    const heb=HebrewDate.fromDateString(m.birthDate);
+    const bg=m.gender==='male'?'var(--male)':'var(--female)';
+    const zodiacIdx=bd?getZodiacIndex(bd.day,bd.month):-1;
+
+    let html='<div style="text-align:center;padding:10px">';
+    html+='<div style="font-size:4em;margin-bottom:10px">🎂</div>';
+    if(m.photo)html+='<img src="'+m.photo+'" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:4px solid '+bg+';margin-bottom:10px">';
+    else html+='<div style="width:80px;height:80px;border-radius:50%;background:'+bg+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.8em;font-weight:700;margin:0 auto 10px">'+App.getInitials(m.firstName,m.lastName)+'</div>';
+    html+='<h2>'+m.firstName+' '+m.lastName+'</h2>';
+    html+='<div style="color:var(--text-muted);margin-bottom:15px">'+(App.RELATION_LABELS[m.relationType]||'')+'</div>';
+
+    html+='<div class="bday-detail-grid">';
+    html+='<div class="bday-detail-item"><div class="bday-detail-value">'+age+'</div><div class="bday-detail-label">שנים ב-'+year+'</div></div>';
+    html+='<div class="bday-detail-item"><div class="bday-detail-value">'+m.birthDate+'</div><div class="bday-detail-label">תאריך לידה</div></div>';
+    if(heb)html+='<div class="bday-detail-item"><div class="bday-detail-value" style="font-size:.9em">'+heb+'</div><div class="bday-detail-label">🕎 תאריך עברי</div></div>';
+    if(zodiacIdx>=0)html+='<div class="bday-detail-item"><div class="bday-detail-value">'+ZODIAC[zodiacIdx]+'</div><div class="bday-detail-label">'+ZODIAC_NAMES[zodiacIdx]+'</div></div>';
+
+    if(dl===0)html+='<div class="bday-detail-item" style="background:#FFF3E0;grid-column:1/-1"><div class="bday-detail-value" style="color:#f44336">🎉 היום יום ההולדת!</div></div>';
+    else html+='<div class="bday-detail-item" style="grid-column:1/-1"><div class="bday-detail-value">'+dl+'</div><div class="bday-detail-label">ימים ליום ההולדת הבא</div></div>';
+    html+='</div>';
+
+    html+='<div style="margin-top:15px;display:flex;gap:8px;justify-content:center">';
+    html+='<button class="btn btn-primary btn-sm" onclick="App.closeModal(\\'birthdayDetailModal\\');App.viewMember(\\''+m.id+'\\')">👁️ צפייה</button>';
+    html+='<button class="btn btn-accent btn-sm" onclick="BirthdayCalendar.sendWish(\\''+m.firstName+'\\')">🎉 שלח ברכה</button>';
+    html+='</div></div>';
+
+    document.getElementById('birthdayDetailContent').innerHTML=html;
+    App.openModal('birthdayDetailModal');
+}
+
+function getZodiacIndex(day,month){
+    const dates=[[20,1],[19,2],[20,3],[20,4],[21,5],[21,6],[22,7],[23,8],[23,9],[23,10],[22,11],[22,12]];
+    for(let i=0;i<12;i++){
+        if(month===dates[i][1]-1&&day>=dates[i][0]||month===(dates[i][1])%12&&day<dates[(i+1)%12][0]){
+            return(i+1)%12;
+        }
+    }
+    // Simplified
+    const z=[9,10,11,0,1,2,3,4,5,6,7,8];
+    return z[month]||0;
+}
+
+function sendWish(name){
+    const text='🎂🎉 מזל טוב '+name+'! שיהיה יום הולדת מדהים!';
+    if(navigator.share){
+        navigator.share({title:'ברכת יום הולדת',text:text});
+    }else{
+        window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+    }
+}
+
+function prevMonth(){
+    if(currentView==='year'){currentYear--;render();return;}
+    currentMonth--;if(currentMonth<0){currentMonth=11;currentYear--;}render();
+}
+function nextMonth(){
+    if(currentView==='year'){currentYear++;render();return;}
+    currentMonth++;if(currentMonth>11){currentMonth=0;currentYear++;}render();
+}
+function goToday(){currentMonth=new Date().getMonth();currentYear=new Date().getFullYear();render();}
+function goToMonth(m){currentMonth=m;currentView='month';updateViewBtns();render();}
+function setView(v){currentView=v;updateViewBtns();render();}
+function updateViewBtns(){
+    document.querySelectorAll('.calendar-view-btn').forEach(b=>b.classList.remove('active'));
+    const id={month:'viewMonthBtn',year:'viewYearBtn',list:'viewListBtn'}[currentView];
+    document.getElementById(id)?.classList.add('active');
+}
+
+function renderUpcomingWidget(containerId){
+    const c=document.getElementById(containerId);if(!c)return;
+    const members=App.getMembers().filter(m=>m.birthDate&&m.status!=='deceased');
+    const sorted=members.map(m=>({...m,dl:daysUntilBirthday(m.birthDate)})).sort((a,b)=>a.dl-b.dl).slice(0,6);
+    if(!sorted.length){c.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px">אין ימי הולדת</div>';return;}
+    c.innerHTML=sorted.map(m=>{
+        const bg=m.gender==='male'?'var(--male)':'var(--female)';
+        const label=m.dl===0?'🎉 היום!':m.dl===1?'מחר!':'עוד '+m.dl+' ימים';
+        const lc=m.dl===0?'#f44336':m.dl<=7?'var(--accent)':'var(--primary)';
+        return '<div style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;margin-bottom:5px;cursor:pointer;background:'+(m.dl<=7?'#FFF8E1':'')+'" onclick="App.switchPage(\\'birthdays\\')">'
+        +'<div style="width:36px;height:36px;border-radius:50%;background:'+bg+';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.85em;flex-shrink:0">'
+        +(m.photo?'<img src="'+m.photo+'" style="width:100%;height:100%;border-radius:50%;object-fit:cover">':App.getInitials(m.firstName,m.lastName))+'</div>'
+        +'<div style="flex:1"><div style="font-weight:600;font-size:.9em">'+m.firstName+' '+m.lastName+'</div>'
+        +'<div style="font-size:.78em;color:var(--text-muted)">'+m.birthDate+'</div></div>'
+        +'<span style="background:'+lc+';color:#fff;padding:3px 10px;border-radius:12px;font-size:.76em;font-weight:600">'+label+'</span></div>';
+    }).join('');
+}
+
+return{render,prevMonth,nextMonth,goToday,goToMonth,setView,showDetail,sendWish,renderUpcomingWidget};
+})();`;
+}
+
+// ============================================================
+// CSS - with calendar styles added
+// ============================================================
+function buildCSS(){
+return `@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+:root{--primary:#2E7D32;--primary-light:#4CAF50;--primary-dark:#1B5E20;--accent:#FF8F00;--accent-light:#FFB300;--bg:#F1F8E9;--text:#1B5E20;--text-light:#558B2F;--text-muted:#8D6E63;--border:#C8E6C9;--shadow:0 4px 20px rgba(46,125,50,.15);--shadow-hover:0 8px 30px rgba(46,125,50,.25);--male:#1976D2;--female:#E91E63;--divorced:#FF5722;--deceased:#78909C;--gradient:linear-gradient(135deg,#2E7D32,#66BB6A);--gradient-accent:linear-gradient(135deg,#FF8F00,#FFB300);--radius:14px;--radius-sm:10px}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:var(--primary-light);border-radius:4px}
+
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1B5E20,#4CAF50,#81C784);padding:20px}
+.login-card{background:#fff;border-radius:28px;padding:45px 40px;max-width:420px;width:100%;box-shadow:0 25px 80px rgba(0,0,0,.3);animation:slideUp .5s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+.login-logo{font-size:4em;text-align:center;margin-bottom:8px;animation:sway 3s ease-in-out infinite}
+@keyframes sway{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+.login-title{text-align:center;font-size:2em;font-weight:900;color:var(--primary-dark);margin-bottom:4px}
+.login-subtitle{text-align:center;color:var(--text-muted);margin-bottom:30px}.login-field{margin-bottom:16px}
+.login-field label{display:block;font-weight:600;font-size:.88em;margin-bottom:5px}
+.login-field input{width:100%;padding:12px 16px;border:2px solid var(--border);border-radius:12px;font-family:'Heebo',sans-serif;font-size:.95em;transition:all .3s}
+.login-field input:focus{outline:none;border-color:var(--primary-light);box-shadow:0 0 0 4px rgba(76,175,80,.15)}
+.login-error{background:#FFF0F0;border:1px solid #FFCDD2;border-radius:10px;padding:10px;margin-bottom:14px;color:#C62828;font-size:.88em}
+.login-btn{width:100%;padding:13px;border-radius:12px;border:none;font-family:'Heebo',sans-serif;font-size:1em;font-weight:700;cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px}
+.login-btn.primary{background:var(--gradient);color:#fff;box-shadow:0 4px 15px rgba(46,125,50,.3)}.login-btn.primary:hover{transform:translateY(-2px)}
+.login-btn.google{background:#fff;color:#333;border:2px solid #E0E0E0}.login-btn.secondary{background:#F1F8E9;color:var(--primary-dark)}
+.login-btn.loading{opacity:.7;pointer-events:none}
+.login-divider{text-align:center;margin:18px 0;position:relative}.login-divider::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:var(--border)}
+.login-divider span{background:#fff;padding:0 14px;position:relative;color:var(--text-muted);font-size:.85em}
+.login-link{display:block;text-align:center;margin-top:14px;color:var(--primary);font-size:.85em;cursor:pointer;background:none;border:none;font-family:'Heebo',sans-serif}
+
+.tree-select-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1B5E20,#4CAF50,#81C784);padding:20px}
+.tree-select-card{background:#fff;border-radius:28px;padding:40px;max-width:480px;width:100%;box-shadow:0 25px 80px rgba(0,0,0,.3);text-align:center;animation:slideUp .5s ease}
+.tree-select-option{background:#F8FFF8;border:2px solid var(--border);border-radius:16px;margin-bottom:12px;overflow:hidden;text-align:right}
+.tree-select-option.open{border-color:var(--primary-light)}.tree-select-option-header{display:flex;align-items:center;gap:14px;padding:16px 18px;cursor:pointer}
+.tree-select-option-header:hover{background:#E8F5E9}.tree-select-option-header span:first-child{font-size:1.8em}
+.tree-select-option-header div{flex:1}.tree-select-option-header strong{display:block}.tree-select-option-header small{color:var(--text-muted);font-size:.82em}
+.tree-select-arrow{transition:transform .3s}.tree-select-option.open .tree-select-arrow{transform:rotate(-90deg)}
+.tree-select-option-body{display:none;padding:0 18px 18px}.tree-select-option.open .tree-select-option-body{display:block}
+
+.header{background:var(--gradient);color:#fff;position:sticky;top:0;z-index:1000;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.header-content{max-width:1400px;margin:0 auto;padding:12px 30px;display:flex;justify-content:space-between;align-items:center}
+.logo{display:flex;align-items:center;gap:10px;font-size:1.6em;font-weight:800}.logo-icon{font-size:1.3em;animation:sway 3s ease-in-out infinite}
+.header-actions{display:flex;gap:10px;align-items:center}
+.sync-status{display:flex;align-items:center;gap:6px;font-size:.85em}.sync-dot{width:8px;height:8px;border-radius:50%;background:#ff5252}
+.sync-dot.synced{background:#69F0AE}.sync-dot.syncing{background:#FFD740;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.header-btn{background:rgba(255,255,255,.2);color:#fff;border:2px solid rgba(255,255,255,.3);padding:7px 16px;border-radius:25px;cursor:pointer;font-family:'Heebo',sans-serif;font-size:.88em;font-weight:500;transition:all .3s}
+.header-btn:hover{background:rgba(255,255,255,.35)}.tree-name-header{font-size:.55em;font-weight:500;opacity:.85}.role-badge{font-size:.7em}
+.user-menu{position:relative}.user-avatar{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.1em;border:2px solid rgba(255,255,255,.3)}
+.user-avatar:hover{background:rgba(255,255,255,.35)}.user-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.user-dropdown{position:absolute;top:100%;left:0;background:#fff;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.2);min-width:220px;padding:8px;display:none;z-index:1000}
+.user-dropdown.show{display:block}.user-dropdown .user-info{padding:12px;text-align:center}
+.user-dropdown .user-info strong{display:block;color:var(--text)}.user-dropdown .user-info small{color:var(--text-muted)}
+.user-dropdown hr{border:none;border-top:1px solid var(--border);margin:4px 0}
+.user-dropdown button{width:100%;padding:10px 14px;background:none;border:none;font-family:'Heebo',sans-serif;font-size:.9em;text-align:right;cursor:pointer;border-radius:8px;color:var(--text);display:flex;align-items:center;gap:8px}
+.user-dropdown button:hover{background:#F1F8E9}.user-dropdown button.danger{color:#f44336}.user-dropdown button.danger:hover{background:#FFF0F0}
+
+.nav-tabs{display:flex;background:rgba(0,0,0,.1);padding:0 30px;overflow-x:auto}
+.nav-tab{padding:11px 22px;color:rgba(255,255,255,.7);cursor:pointer;font-weight:500;border-bottom:3px solid transparent;transition:all .3s;font-size:.92em;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.nav-tab:hover{color:#fff;background:rgba(255,255,255,.1)}.nav-tab.active{color:#fff;border-bottom-color:var(--accent);background:rgba(255,255,255,.1)}
+
+.main{max-width:1400px;margin:0 auto;padding:22px}.page{display:none}.page.active{display:block;animation:fadeIn .35s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px}
+.stat-card{background:#fff;border-radius:var(--radius);padding:18px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow);transition:all .3s}
+.stat-card:hover{transform:translateY(-3px)}.stat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4em}
+.stat-info h3{font-size:1.5em;font-weight:800;line-height:1}.stat-info p{font-size:.82em;color:var(--text-muted)}
+.dashboard-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:20px}
+.card{background:#fff;border-radius:18px;padding:22px;box-shadow:var(--shadow);margin-bottom:18px}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid var(--border);flex-wrap:wrap;gap:10px}
+.card-title{font-size:1.2em;font-weight:700;display:flex;align-items:center;gap:8px}
+
+.btn{padding:9px 20px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-family:'Heebo',sans-serif;font-weight:600;font-size:.92em;transition:all .3s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn-primary{background:var(--gradient);color:#fff;box-shadow:0 4px 15px rgba(46,125,50,.3)}.btn-primary:hover{transform:translateY(-2px)}
+.btn-accent{background:var(--gradient-accent);color:#fff}.btn-outline{background:transparent;color:var(--primary);border:2px solid var(--primary)}.btn-outline:hover{background:var(--primary);color:#fff}
+.btn-danger{background:#f44336;color:#fff}.btn-sm{padding:6px 14px;font-size:.83em;border-radius:8px}
+.btn-ghost{background:none;border:none;color:var(--primary);padding:4px 8px;cursor:pointer;font-family:'Heebo',sans-serif;border-radius:6px}.btn-ghost:hover{background:#E8F5E9}
+
+.form-section{margin-bottom:20px}.section-title{font-weight:700;margin-bottom:14px;color:var(--primary-dark);display:flex;align-items:center;gap:8px}
+.required-note{font-size:.78em;font-weight:400;color:var(--text-muted)}
+.form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.form-group{display:flex;flex-direction:column;gap:5px}.form-group.full-width{grid-column:1/-1}
+.form-label{font-weight:600;font-size:.88em}.required{color:#f44336}
+.form-input,.form-select,.form-textarea{padding:10px 14px;border:2px solid var(--border);border-radius:var(--radius-sm);font-family:'Heebo',sans-serif;font-size:.92em;transition:all .3s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(76,175,80,.15)}
+.form-select.compact{padding:6px 10px;font-size:.88em;min-width:150px}.form-textarea{resize:vertical;min-height:70px}
+.expandable-section{margin-top:10px;border-top:2px dashed var(--border);padding-top:10px}
+.expand-toggle{background:none;border:none;color:var(--primary);font-family:'Heebo',sans-serif;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px 0;width:100%}
+.expand-icon{transition:transform .3s;font-size:.8em}.expand-icon.open{transform:rotate(-90deg)}.extra-fields{padding-top:14px}
+.photo-upload-section{display:flex;justify-content:center;margin-bottom:18px}
+.photo-preview{width:100px;height:100px;border-radius:50%;border:3px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;background:#E8F5E9;cursor:pointer;position:relative}
+.photo-preview:hover{border-color:var(--primary-light)}.photo-preview img{width:100%;height:100%;object-fit:cover}.photo-preview .placeholder{font-size:2.5em;color:var(--primary-light)}
+.photo-preview .overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.3em;opacity:0;transition:opacity .3s;border-radius:50%}
+.photo-preview:hover .overlay{opacity:1}
+
+.search-container{position:relative;margin-bottom:18px}
+.search-input{width:100%;padding:12px 18px 12px 45px;border:2px solid var(--border);border-radius:var(--radius);font-family:'Heebo',sans-serif;font-size:.95em}
+.search-input:focus{outline:none;border-color:var(--primary-light)}.search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted)}
+.members-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.member-card{background:#fff;border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);transition:all .3s;border-right:4px solid var(--primary);position:relative}
+.member-card:hover{transform:translateY(-3px)}.member-card.male{border-right-color:var(--male)}.member-card.female{border-right-color:var(--female)}.member-card.deceased{border-right-color:var(--deceased);opacity:.85}
+.member-card-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.member-avatar{width:52px;height:52px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid var(--border)}
+.member-avatar img{width:100%;height:100%;object-fit:cover}
+.member-avatar .initials{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff}
+.member-card.male .initials{background:var(--male)}.member-card.female .initials{background:var(--female)}
+.member-name{font-size:1.08em;font-weight:700}.relation-badge{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:.76em;font-weight:600;background:#E8F5E9;color:#2E7D32}
+.member-details{font-size:.85em;color:var(--text-light);display:flex;flex-direction:column;gap:4px}.member-detail{display:flex;align-items:center;gap:6px}
+.member-actions{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.deceased-badge{position:absolute;top:8px;left:8px;background:var(--deceased);color:#fff;padding:2px 8px;border-radius:20px;font-size:.72em;font-weight:600}
+.events-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.filter-chip{padding:5px 14px;border-radius:20px;border:2px solid var(--border);background:#fff;cursor:pointer;font-family:'Heebo',sans-serif;font-size:.85em;font-weight:500;transition:all .3s}
+.filter-chip:hover,.filter-chip.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+.tree-page-card{padding:18px}.tree-toolbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:15px}
+.toolbar-group{display:flex;align-items:center;gap:6px;font-size:.88em}.toolbar-divider{width:1px;height:24px;background:var(--border)}
+.level-buttons{display:flex;gap:4px}
+.level-btn{width:32px;height:32px;border-radius:50%;border:2px solid var(--primary);background:#fff;color:var(--primary);font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.level-btn.active,.level-btn:hover{background:var(--primary);color:#fff}
+.checkbox-label{display:flex;align-items:center;gap:4px;font-size:.85em;cursor:pointer;white-space:nowrap}
+.connect-instructions{background:#E3F2FD;border:2px solid #90CAF9;border-radius:var(--radius-sm);padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:8px;font-size:.9em;color:#1565C0}
+.tree-container{overflow:auto;padding:30px;min-height:400px;border:2px solid var(--border);border-radius:var(--radius);background:#FAFFF5}
+.tree-wrapper{display:flex;flex-direction:column;align-items:center;min-width:fit-content}.tree-node{display:flex;flex-direction:column;align-items:center}
+.couple-display{display:flex;align-items:flex-start;gap:6px}
+.tree-node-content{background:#fff;border:3px solid var(--primary);border-radius:var(--radius);padding:10px 14px;text-align:center;cursor:pointer;transition:all .3s;min-width:120px;user-select:none}
+.tree-node-content:hover{transform:scale(1.06);box-shadow:var(--shadow-hover)}
+.tree-node-content.male{border-color:var(--male);background:#E3F2FD}.tree-node-content.female{border-color:var(--female);background:#FCE4EC}.tree-node-content.deceased{border-color:var(--deceased);background:#ECEFF1}
+.tree-node-content.connectable{cursor:crosshair}.tree-node-content.connectable:hover{box-shadow:0 0 0 4px rgba(76,175,80,.4)}
+.tree-node-content.drag-source{box-shadow:0 0 0 4px rgba(33,150,243,.5)}.tree-node-content.drag-target{box-shadow:0 0 0 4px rgba(76,175,80,.5)}
+.tree-node-photo{width:44px;height:44px;border-radius:50%;margin:0 auto 6px;overflow:hidden;border:2px solid var(--border)}
+.tree-node-photo img{width:100%;height:100%;object-fit:cover}
+.tree-node-photo .initials{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:.85em}
+.tree-node-name{font-weight:700;font-size:.85em}.tree-node-dates{font-size:.72em;color:var(--text-muted)}.tree-node-hebrew{font-size:.68em;color:var(--accent);font-weight:600}
+.tree-node-relation{font-size:.7em;color:var(--accent);font-weight:600}
+.couple-link-box{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 4px}
+.couple-link{font-size:1.1em}.ex-label{font-size:.65em;color:var(--divorced);font-weight:600;background:#FBE9E7;padding:1px 5px;border-radius:4px}
+.tree-connector{width:2px;height:22px;background:var(--primary-light);margin:0 auto}
+.children-container{display:flex;gap:12px;justify-content:center;padding-top:8px}
+.child-branch{display:flex;flex-direction:column;align-items:center;position:relative}
+.child-branch::before{content:'';position:absolute;top:-8px;width:2px;height:8px;background:var(--primary-light)}
+
+.event-card{display:flex;align-items:center;gap:16px;padding:16px;background:#fff;border-radius:var(--radius);box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:12px;border-right:4px solid var(--accent)}
+.event-card:hover{transform:translateX(-3px)}.event-icon{width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5em;flex-shrink:0}
+.event-icon.birthday{background:#FFF3E0}.event-icon.wedding{background:#FCE4EC}.event-icon.barMitzvah{background:#E8EAF6}.event-icon.memorial{background:#ECEFF1}.event-icon.other{background:#E8F5E9}
+.event-info{flex:1}.event-name{font-weight:700}.event-meta{font-size:.83em;color:var(--text-muted);display:flex;gap:12px;flex-wrap:wrap}
+.event-participants{font-size:.8em;color:var(--text-light);margin-top:4px}
+.event-date-box{text-align:center;min-width:70px}.event-date-box .day{font-size:1.5em;font-weight:800;color:var(--primary)}.event-date-box .month{font-size:.82em;color:var(--text-muted)}
+.event-date-box .days-left{font-size:.75em;padding:2px 8px;border-radius:12px;background:var(--accent);color:#fff;font-weight:600;margin-top:4px;display:inline-block}
+.event-date-box .days-left.today{background:#f44336}.event-date-box .days-left.past{background:var(--deceased)}
+.event-actions{display:flex;gap:4px;flex-direction:column}
+
+/* ========== BIRTHDAY CALENDAR ========== */
+.calendar-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.calendar-month-label{font-weight:700;font-size:1.1em;min-width:140px;text-align:center}
+.calendar-view-btn{background:#f5f5f5;color:var(--text);border:none}.calendar-view-btn.active{background:var(--primary);color:#fff}
+
+.calendar-grid{margin-bottom:20px}
+.calendar-header-row{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px}
+.calendar-day-header{text-align:center;font-weight:700;font-size:.85em;padding:8px 0;color:var(--primary-dark);background:#E8F5E9;border-radius:8px}
+.calendar-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.calendar-cell{min-height:90px;border:1px solid #eee;border-radius:8px;padding:4px;transition:background .2s;position:relative}
+.calendar-cell.empty{background:#fafafa;border-color:transparent}
+.calendar-cell.today{background:#FFFDE7;border-color:#FFD54F;box-shadow:inset 0 0 0 2px #FFD54F}
+.calendar-cell.has-birthday{background:#FFF8E1}
+.calendar-cell:hover:not(.empty){background:#F1F8E9}
+.cell-date{font-weight:600;font-size:.85em;color:var(--text-muted);margin-bottom:2px;padding:2px 4px}
+.cell-date.today-date{background:var(--accent);color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:.8em}
+
+.bday-chip{display:flex;align-items:center;gap:3px;padding:2px 6px;border-radius:6px;font-size:.72em;font-weight:600;margin-bottom:2px;cursor:pointer;transition:transform .2s}
+.bday-chip:hover{transform:scale(1.05)}.bday-chip-emoji{font-size:.9em}.bday-chip-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bday-chip-age{background:rgba(0,0,0,.1);border-radius:4px;padding:0 4px;font-size:.9em}
+
+.birthday-summary{background:#FAFAFA;border-radius:var(--radius);padding:18px;margin-top:10px}
+.summary-title{font-weight:700;font-size:1em;margin-bottom:12px;color:var(--primary-dark)}
+.summary-empty{text-align:center;color:var(--text-muted);padding:20px}
+.summary-list{display:flex;flex-direction:column;gap:8px}
+.summary-item{display:flex;align-items:center;gap:12px;padding:10px;background:#fff;border-radius:var(--radius-sm);cursor:pointer;transition:all .2s;border-right:3px solid transparent}
+.summary-item:hover{background:#F1F8E9;border-right-color:var(--primary)}
+.summary-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.85em;flex-shrink:0}
+.summary-info{flex:1}.summary-name{font-weight:700;font-size:.92em}.summary-meta{font-size:.78em;color:var(--text-muted)}
+.summary-badge{padding:3px 10px;border-radius:12px;font-size:.75em;font-weight:600;background:#E8F5E9;color:var(--primary)}
+.today-badge{background:#f44336!important;color:#fff!important;animation:pulse 1.5s infinite}
+.soon-badge{background:var(--accent)!important;color:#fff!important}
+.month-badge{background:#E3F2FD;color:#1565C0}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+
+.year-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:15px}
+.year-month-card{background:#fff;border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:all .3s;border:2px solid var(--border)}
+.year-month-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-hover);border-color:var(--primary-light)}
+.year-month-card.current{border-color:var(--accent);background:#FFFDE7}
+.year-month-name{font-weight:700;font-size:.95em;margin-bottom:6px;color:var(--primary-dark)}
+.year-month-count{font-size:2em;font-weight:800;color:var(--primary);line-height:1}
+.year-month-label{font-size:.78em;color:var(--text-muted);margin-bottom:8px}
+.year-month-faces{display:flex;justify-content:center;gap:3px;flex-wrap:wrap}
+.mini-face{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.65em;font-weight:700}
+.mini-face.more{background:#E0E0E0;color:#666;font-size:.6em}
+.year-total{text-align:center;font-weight:600;color:var(--text-muted);font-size:.95em}
+
+.birthday-list-view{display:flex;flex-direction:column;gap:8px}
+.list-birthday-item{display:flex;align-items:center;gap:14px;padding:14px;background:#fff;border-radius:var(--radius);box-shadow:0 2px 8px rgba(0,0,0,.05);cursor:pointer;transition:all .2s;border-right:4px solid var(--accent)}
+.list-birthday-item:hover{transform:translateX(-3px);box-shadow:var(--shadow)}
+.list-bday-avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.95em;flex-shrink:0;overflow:hidden}
+.list-bday-avatar img{width:100%;height:100%;object-fit:cover}
+.list-bday-info{flex:1}.list-bday-name{font-weight:700;font-size:.95em}.list-bday-date{font-size:.8em;color:var(--text-muted)}.list-bday-relation{font-size:.78em;color:var(--primary)}
+.list-bday-right{text-align:center;min-width:70px}.list-bday-age{font-size:1.8em;font-weight:800;color:var(--primary);line-height:1}
+
+.bday-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}
+.bday-detail-item{background:#f8f9fa;border-radius:10px;padding:12px;text-align:center}
+.bday-detail-value{font-size:1.3em;font-weight:800;color:var(--primary)}.bday-detail-label{font-size:.78em;color:var(--text-muted);margin-top:2px}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:10000;padding:20px;backdrop-filter:blur(4px)}
+.modal-overlay.active{display:flex}.modal{background:#fff;border-radius:22px;padding:26px;max-width:650px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:slideUp .3s ease}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;padding-bottom:14px;border-bottom:2px solid var(--border)}
+.modal-title{font-size:1.3em;font-weight:800}.modal-close{width:36px;height:36px;border-radius:50%;border:none;background:#f5f5f5;cursor:pointer;font-size:1.2em;display:flex;align-items:center;justify-content:center;transition:all .3s}
+.modal-close:hover{background:#f44336;color:#fff;transform:rotate(90deg)}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;padding-top:14px;border-top:2px solid var(--border)}
+.confirm-dialog{text-align:center;padding:16px}.confirm-dialog .icon{font-size:2.8em;margin-bottom:12px}.confirm-actions{display:flex;gap:10px;justify-content:center}
+.toast-container{position:fixed;bottom:28px;left:28px;z-index:20000;display:flex;flex-direction:column;gap:8px}
+.toast{background:#fff;padding:12px 18px;border-radius:var(--radius-sm);box-shadow:0 8px 30px rgba(0,0,0,.15);display:flex;align-items:center;gap:10px;animation:slideInLeft .35s ease;min-width:280px;border-right:4px solid var(--primary)}
+.toast.success{border-right-color:#4CAF50}.toast.error{border-right-color:#f44336}.toast.warning{border-right-color:#FF9800}
+@keyframes slideInLeft{from{transform:translateX(-100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.empty-state{text-align:center;padding:50px 20px;color:var(--text-muted)}.empty-state .icon{font-size:3.5em;margin-bottom:12px;opacity:.5}
+.empty-state h3{font-size:1.2em;margin-bottom:6px;color:var(--text)}.empty-state p{margin-bottom:18px}
+.view-header{text-align:center;margin-bottom:18px}.view-avatar{width:90px;height:90px;border-radius:50%;margin:0 auto 10px;overflow:hidden;border:4px solid var(--border)}
+.view-avatar img{width:100%;height:100%;object-fit:cover}
+.view-avatar .initials{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2em;font-weight:700;color:#fff}
+.view-details{display:grid;grid-template-columns:1fr 1fr;gap:10px}.view-detail{padding:8px 12px;background:#f8f9fa;border-radius:8px;font-size:.9em}
+.view-detail strong{display:block;font-size:.82em;color:var(--text-muted);margin-bottom:2px}.view-children{margin-top:14px}
+.view-child-chip{display:inline-block;background:#E8F5E9;padding:3px 10px;border-radius:20px;font-size:.85em;margin:3px;cursor:pointer}.view-child-chip:hover{background:#C8E6C9}
+
+.share-section{margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}.share-section:last-child{border-bottom:none}
+.share-section-title{font-weight:700;font-size:.95em;margin-bottom:10px;color:var(--primary-dark)}
+.share-tree-name{display:flex;align-items:center;gap:10px;justify-content:center}
+.share-link-box{display:flex;gap:8px;align-items:center}.share-link-input{flex:1;font-size:.82em!important;direction:ltr;text-align:left;color:var(--primary)!important}
+.share-actions-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.share-members-list{display:flex;flex-direction:column;gap:8px}
+.share-member-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#FAFAFA;border-radius:10px;gap:10px}
+.share-member-info{display:flex;align-items:center;gap:10px}
+.share-member-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;flex-shrink:0}
+.share-member-name{font-weight:600;font-size:.9em}.share-member-role{font-size:.78em;font-weight:600}.share-member-actions{display:flex;gap:6px;align-items:center}
+.role-info-box{padding:12px;border-radius:10px;font-size:.9em;text-align:center}
+.role-info-box.owner{background:#FFF8E1;color:#F57F17}.role-info-box.editor{background:#E8F5E9;color:#2E7D32}.role-info-box.viewer{background:#E3F2FD;color:#1565C0}
+
+body.viewer-mode .btn-primary,body.viewer-mode .btn-danger,body.viewer-mode .btn-accent{display:none!important}
+body.viewer-mode [onclick*="openAddModal"],body.viewer-mode [onclick*="openEditModal"],body.viewer-mode [onclick*="confirmDelete"],body.viewer-mode [onclick*="openAddEvent"]{display:none!important}
+body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body.viewer-mode #connectModeBtn{display:none!important}
+
+@media(max-width:768px){.header-content{flex-direction:column;gap:8px;padding:10px 15px}.main{padding:14px}.form-grid-2,.view-details{grid-template-columns:1fr}.members-grid{grid-template-columns:1fr}.dashboard-grid{grid-template-columns:1fr}.stats-bar{grid-template-columns:repeat(2,1fr)}.modal{padding:18px}.tree-name-header{display:none}.year-grid{grid-template-columns:repeat(2,1fr)}.calendar-cell{min-height:60px}.bday-chip-name{max-width:50px}.calendar-nav{justify-content:center}}
+@media print{.header,.nav-tabs,.btn,.search-container,.tree-toolbar,.events-filters,.calendar-nav{display:none!important}.main{padding:0}.card{box-shadow:none;border:1px solid #ddd}}`;
+}
+
+// ============================================================
+// ALL OTHER JS FILES (Same as previous version - abbreviated)
+// ============================================================
+function buildFirestoreRules(){
+return `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /userProfiles/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /trees/{treeId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      match /familyMembers/{memberId} { allow read, write: if request.auth != null; }
+      match /familyEvents/{eventId} { allow read, write: if request.auth != null; }
+    }
+  }
+}`;
+}
+
+function buildFirebaseConfig(c){
+return `const FirebaseDB=(()=>{const firebaseConfig={apiKey:"${c.apiKey}",authDomain:"${c.authDomain}",projectId:"${c.projectId}",storageBucket:"${c.storageBucket}",messagingSenderId:"${c.senderId}",appId:"${c.appId}"};let db=null,isConnected=false;function init(){try{if(firebaseConfig.apiKey==='YOUR_API_KEY'){updateStatus('error','לא מוגדר');return false}firebase.initializeApp(firebaseConfig);db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(e=>{});isConnected=true;updateStatus('synced','מסונכרן');Sharing.init(db);return true}catch(e){updateStatus('error','שגיאה');return false}}function getDb(){return db}function updateStatus(t,x){const el=document.getElementById('syncStatus');if(!el)return;const d=el.querySelector('.sync-dot'),tx=el.querySelector('.sync-text');if(!d||!tx)return;d.className='sync-dot';d.style.background='';if(t==='synced')d.classList.add('synced');else if(t==='syncing')d.classList.add('syncing');else if(t==='error')d.style.background='#ff5252';tx.textContent=x}function getCollectionPath(c){const tid=Sharing.getTreeId();if(!tid)throw new Error('No tree');return'trees/'+tid+'/'+c}let mU=null,eU=null;function listenToMembers(cb){if(!db)return;if(mU)mU();try{mU=db.collection(getCollectionPath('familyMembers')).onSnapshot(s=>{const a=[];s.forEach(d=>a.push({id:d.id,...d.data()}));updateStatus('synced','מסונכרן');cb(a)},e=>{updateStatus('error','שגיאה')})}catch(e){}}function listenToEvents(cb){if(!db)return;if(eU)eU();try{eU=db.collection(getCollectionPath('familyEvents')).onSnapshot(s=>{const a=[];s.forEach(d=>a.push({id:d.id,...d.data()}));cb(a)},e=>{})}catch(e){}}function stopListening(){if(mU){mU();mU=null}if(eU){eU();eU=null}}async function getMembers(){if(!db)return[];updateStatus('syncing','טוען...');try{const s=await db.collection(getCollectionPath('familyMembers')).get();const a=[];s.forEach(d=>a.push({id:d.id,...d.data()}));updateStatus('synced','מסונכרן');return a}catch(e){updateStatus('error','שגיאה');return[]}}async function saveMember(m){if(!db||!Sharing.canEdit())return;updateStatus('syncing','שומר...');try{await db.collection(getCollectionPath('familyMembers')).doc(m.id).set(JSON.parse(JSON.stringify(m)));updateStatus('synced','מסונכרן')}catch(e){updateStatus('error','שגיאה')}}async function deleteMember(id){if(!db||!Sharing.canDelete())return;try{await db.collection(getCollectionPath('familyMembers')).doc(id).delete();updateStatus('synced','מסונכרן')}catch(e){}}async function saveAllMembers(ms){if(!db||!Sharing.canEdit())return;try{const b=db.batch();const p=getCollectionPath('familyMembers');ms.forEach(m=>b.set(db.collection(p).doc(m.id),JSON.parse(JSON.stringify(m))));await b.commit();updateStatus('synced','מסונכרן')}catch(e){}}async function getEvents(){if(!db)return[];try{const s=await db.collection(getCollectionPath('familyEvents')).get();const a=[];s.forEach(d=>a.push({id:d.id,...d.data()}));return a}catch(e){return[]}}async function saveEvent(ev){if(!db||!Sharing.canEdit())return;try{await db.collection(getCollectionPath('familyEvents')).doc(ev.id).set(JSON.parse(JSON.stringify(ev)))}catch(e){}}async function deleteEvent(id){if(!db||!Sharing.canDelete())return;try{await db.collection(getCollectionPath('familyEvents')).doc(id).delete()}catch(e){}}return{init,getDb,updateStatus,listenToMembers,listenToEvents,stopListening,getMembers,saveMember,deleteMember,saveAllMembers,getEvents,saveEvent,deleteEvent,isReady:()=>isConnected}})();`;
+}
+
+function buildSharing(){
+return `const Sharing=(()=>{let cTid=null,cRole=null,tInfo=null,db=null;function init(d){db=d}function genCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let r='';for(let i=0;i<6;i++)r+=c[Math.floor(Math.random()*c.length)];return r}async function createTree(uid,name){const tid='tree_'+Date.now().toString(36);const sc=genCode();const td={id:tid,name:'העץ של '+(name||'המשפחה'),ownerId:uid,shareCode:sc,members:{[uid]:{role:'owner',name:name||'',joinedAt:new Date().toISOString()}},createdAt:new Date().toISOString(),settings:{requireApproval:false,allowEditorDelete:false}};await db.collection('trees').doc(tid).set(td);cTid=tid;cRole='owner';tInfo=td;await db.collection('userProfiles').doc(uid).set({currentTreeId:tid,trees:firebase.firestore.FieldValue.arrayUnion({treeId:tid,name:td.name,role:'owner'})},{merge:true});return td}async function loadUserTree(uid){const p=await db.collection('userProfiles').doc(uid).get();const uc=getURLCode();if(uc){const j=await joinByCode(uid,uc,firebase.auth().currentUser?.displayName||'');if(j)return j}if(p.exists){const d=p.data();if(d.currentTreeId){const t=await db.collection('trees').doc(d.currentTreeId).get();if(t.exists){tInfo=t.data();cTid=d.currentTreeId;cRole=tInfo.members?.[uid]?.role||'viewer';return tInfo}}}return null}function getURLCode(){const p=new URLSearchParams(window.location.search);return p.get('join')||null}async function joinByCode(uid,code,name){code=code.toUpperCase().trim();const s=await db.collection('trees').where('shareCode','==',code).limit(1).get();if(s.empty)return null;const td=s.docs[0].data();if(td.members?.[uid]){cTid=td.id;cRole=td.members[uid].role;tInfo=td;return td}const role='editor';await db.collection('trees').doc(td.id).update({['members.'+uid]:{role,name,joinedAt:new Date().toISOString()}});await db.collection('userProfiles').doc(uid).set({currentTreeId:td.id,trees:firebase.firestore.FieldValue.arrayUnion({treeId:td.id,name:td.name,role})},{merge:true});cTid=td.id;cRole=role;tInfo={...td};tInfo.members[uid]={role,name};return tInfo}function getShareLink(){if(!tInfo)return'';return location.origin+location.pathname+'?join='+tInfo.shareCode}async function regenerateCode(){if(cRole!=='owner')return;const c=genCode();await db.collection('trees').doc(cTid).update({shareCode:c});tInfo.shareCode=c;return c}async function setMemberRole(uid,tid,r){if(cRole!=='owner')return;await db.collection('trees').doc(cTid).update({['members.'+tid+'.role']:r});if(tInfo.members[tid])tInfo.members[tid].role=r;App.showToast('עודכן ✅')}async function removeMember(uid,tid){if(cRole!=='owner')return;await db.collection('trees').doc(cTid).update({['members.'+tid]:firebase.firestore.FieldValue.delete()});delete tInfo.members[tid];App.showToast('הוסר','warning')}async function renameTree(n){if(cRole!=='owner')return;await db.collection('trees').doc(cTid).update({name:n});tInfo.name=n}let tU=null;function listenToTree(cb){if(!db||!cTid)return;if(tU)tU();tU=db.collection('trees').doc(cTid).onSnapshot(d=>{if(d.exists){tInfo=d.data();const uid=firebase.auth().currentUser?.uid;if(uid&&tInfo.members?.[uid])cRole=tInfo.members[uid].role;cb(tInfo)}})}function stopListening(){if(tU){tU();tU=null}}function openSharingModal(){renderContent();App.openModal('sharingModal')}function renderContent(){const c=document.getElementById('sharingContent');if(!c||!tInfo)return;const link=getShareLink();const uid=firebase.auth().currentUser?.uid;const own=cRole==='owner';const es=Object.entries(tInfo.members||{});let mh='';es.forEach(([id,info])=>{const me=id===uid;const rl={owner:'👑 בעלים',editor:'✏️ עורך',viewer:'👁️ צופה'};const rc={owner:'#FF8F00',editor:'#2E7D32',viewer:'#1976D2'};mh+='<div class="share-member-row"><div class="share-member-info"><div class="share-member-avatar" style="background:'+(rc[info.role]||'#999')+'">'+(info.name||'?')[0].toUpperCase()+'</div><div><div class="share-member-name">'+(info.name||'')+(me?' (אני)':'')+'</div><div class="share-member-role" style="color:'+(rc[info.role]||'')+'">'+rl[info.role]+'</div></div></div>'+(own&&!me?'<div class="share-member-actions"><select class="form-select compact" onchange="Sharing.setMemberRole(\\''+uid+'\\',\\''+id+'\\',this.value)" style="font-size:.8em;padding:4px"><option value="editor" '+(info.role==='editor'?'selected':'')+'>✏️</option><option value="viewer" '+(info.role==='viewer'?'selected':'')+'>👁️</option></select><button class="btn btn-danger btn-sm" style="padding:4px 8px;font-size:.75em" onclick="if(confirm(\\'הסרה?\\'))Sharing.removeMember(\\''+uid+'\\',\\''+id+'\\').then(()=>Sharing.renderContent())">✕</button></div>':'')+'</div>'});c.innerHTML='<div class="share-section"><div class="share-section-title">🔗 קישור</div><div class="share-link-box"><input type="text" class="form-input share-link-input" id="shareLinkInput" value="'+link+'" readonly onclick="this.select()"><button class="btn btn-primary btn-sm" onclick="Sharing.copyLink()">📋</button></div><div class="share-actions-row"><button class="btn btn-accent btn-sm" onclick="Sharing.shareWA()">📱 WhatsApp</button>'+(own?'<span style="font-weight:700">🔑 '+tInfo.shareCode+'</span>':'')+'</div></div><div class="share-section"><div class="share-section-title">👥 חברים ('+es.length+')</div><div class="share-members-list">'+mh+'</div></div><div class="share-section"><div class="role-info-box '+cRole+'">'+(cRole==='owner'?'👑 בעלים':cRole==='editor'?'✏️ עורך':'👁️ צופה')+'</div></div>'}async function copyLink(){try{await navigator.clipboard.writeText(getShareLink());App.showToast('הועתק! 📋')}catch{document.getElementById('shareLinkInput')?.select();document.execCommand('copy');App.showToast('הועתק!')}}function shareWA(){window.open('https://wa.me/?text='+encodeURIComponent('🌳 הצטרף/י לעץ המשפחה!\\n'+getShareLink()+'\\nקוד: '+(tInfo?.shareCode||'')),'_blank')}function canEdit(){return cRole==='owner'||cRole==='editor'}function canDelete(){return cRole==='owner'}return{init,createTree,loadUserTree,joinByCode,getShareLink,regenerateCode,setMemberRole,removeMember,renameTree,listenToTree,stopListening,openSharingModal,renderContent,copyLink,shareWA,canEdit,canDelete,isOwner:()=>cRole==='owner',getRole:()=>cRole,getTreeId:()=>cTid,getTreeInfo:()=>tInfo}})();`;
+}
+
+function buildAuth(){
+return `const Auth=(()=>{let cu=null;function init(){const ok=FirebaseDB.init();if(!ok)return;firebase.auth().onAuthStateChanged(async u=>{if(u){cu=u;await onLogin(u)}else{cu=null;onLogout()}});document.getElementById('loginPassword')?.addEventListener('keydown',e=>{if(e.key==='Enter')login()})}async function onLogin(u){document.getElementById('loginScreen').style.display='none';document.getElementById('appContainer').style.display='';document.getElementById('userName').textContent=u.displayName||u.email.split('@')[0];document.getElementById('userEmail').textContent=u.email;if(u.photoURL)document.getElementById('userAvatar').innerHTML='<img src="'+u.photoURL+'">';else document.getElementById('userAvatar').textContent=(u.displayName||u.email)[0].toUpperCase();const tree=await Sharing.loadUserTree(u.uid);if(tree){const r=Sharing.getRole();const ic={owner:'👑',editor:'✏️',viewer:'👁️'};const tn=document.getElementById('currentTreeName');if(tn)tn.textContent=tree.name||'';const rb=document.getElementById('roleBadge');if(rb)rb.textContent=ic[r]||'';App.initAfterLogin()}else{document.getElementById('appContainer').style.display='none';document.getElementById('treeSelectScreen').style.display='';document.getElementById('treeSelectUserName').textContent=u.displayName||u.email.split('@')[0]}}function onLogout(){document.getElementById('loginScreen').style.display='';document.getElementById('appContainer').style.display='none';document.getElementById('treeSelectScreen').style.display='none';FirebaseDB.stopListening();Sharing.stopListening()}window.createNewTree=async function(){const u=firebase.auth().currentUser;if(!u)return;const n=document.getElementById('newTreeName')?.value?.trim()||'העץ שלנו';const t=await Sharing.createTree(u.uid,u.displayName||u.email);await Sharing.renameTree(n);document.getElementById('treeSelectScreen').style.display='none';document.getElementById('appContainer').style.display='';document.getElementById('currentTreeName').textContent=n;App.initAfterLogin();App.showToast('נוצר! 🌳');setTimeout(()=>Sharing.openSharingModal(),1000)};window.joinExistingTree=async function(){const u=firebase.auth().currentUser;if(!u)return;const code=document.getElementById('joinTreeCode')?.value?.trim();if(!code||code.length<4){alert('קוד?');return}const r=await Sharing.joinByCode(u.uid,code,u.displayName||u.email);if(r){document.getElementById('treeSelectScreen').style.display='none';document.getElementById('appContainer').style.display='';document.getElementById('currentTreeName').textContent=r.name||'';App.initAfterLogin();App.showToast('הצטרפת! 🎉')}else alert('לא נמצא')};async function login(){const e=document.getElementById('loginEmail').value.trim(),p=document.getElementById('loginPassword').value;if(!e||!p){sE('loginError','מלא הכל');return}hE('loginError');sL(true);try{await firebase.auth().signInWithEmailAndPassword(e,p)}catch(er){const m={'auth/user-not-found':'לא קיים','auth/wrong-password':'שגוי','auth/invalid-credential':'שגוי'};sE('loginError',m[er.code]||er.message);sL(false)}}async function loginWithGoogle(){hE('loginError');sL(true);try{await firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())}catch(e){if(e.code!=='auth/popup-closed-by-user')sE('loginError',e.message);sL(false)}}async function register(){const n=document.getElementById('registerName').value.trim(),e=document.getElementById('registerEmail').value.trim(),p=document.getElementById('registerPassword').value,p2=document.getElementById('registerPassword2').value;if(!n||!e||!p){sE('registerError','מלא הכל');return}if(p.length<6){sE('registerError','6+ תווים');return}if(p!==p2){sE('registerError','לא תואם');return}hE('registerError');sL(true);try{const r=await firebase.auth().createUserWithEmailAndPassword(e,p);await r.user.updateProfile({displayName:n})}catch(er){sE('registerError',er.message);sL(false)}}async function forgotPassword(){const e=document.getElementById('loginEmail').value.trim();if(!e){sE('loginError','אימייל?');return}try{await firebase.auth().sendPasswordResetEmail(e);alert('📧 נשלח!')}catch(er){sE('loginError',er.message)}}function logout(){if(confirm('להתנתק?'))firebase.auth().signOut()}function showLogin(){document.getElementById('loginForm').style.display='';document.getElementById('registerForm').style.display='none';hE('loginError');hE('registerError')}function showRegister(){document.getElementById('loginForm').style.display='none';document.getElementById('registerForm').style.display='';hE('loginError');hE('registerError')}function sE(id,m){const el=document.getElementById(id);if(el){el.textContent='❌ '+m;el.style.display=''}}function hE(id){const el=document.getElementById(id);if(el)el.style.display='none'}function sL(on){document.querySelectorAll('.login-btn').forEach(b=>on?b.classList.add('loading'):b.classList.remove('loading'))}function toggleUserMenu(){const d=document.getElementById('userDropdown');d.classList.toggle('show');if(d.classList.contains('show'))setTimeout(()=>document.addEventListener('click',function c(e){if(!document.getElementById('userMenu')?.contains(e.target)){d.classList.remove('show');document.removeEventListener('click',c)}}),10)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();return{login,loginWithGoogle,register,logout,forgotPassword,showLogin,showRegister,toggleUserMenu}})();`;
+}
+
+function buildHebrewDate(){
+return `const HebrewDate=(()=>{function isLY(y){return((7*y+1)%19)<7}function eD(y){const m=Math.floor((235*(y-1)+234)/19);let p=12084+13753*m;let h=Math.floor(p/1080);p%=1080;let d=1+29*m+Math.floor(h/24);h%=24;let a=d;if(p>=19440||(p>=9924&&d%7===2&&!isLY(y))||(p>=16789&&d%7===1&&isLY(y-1)))a=d+1;const dw=a%7;if(dw===0||dw===3||dw===5)a++;return a}function yD(y){return eD(y+1)-eD(y)}function t1(hy){const r=eD(5784),e=eD(hy),d=new Date(2023,8,16);d.setDate(d.getDate()+(e-r));return d}function convert(yr,mo,dy){const g=new Date(yr,mo-1,dy);let hy=5784+Math.floor(yr-2023);let t=t1(hy);if(g<t){hy--;t=t1(hy)}const tn=t1(hy+1);if(g>=tn){hy++;t=tn}const dd=Math.round((g-t)/864e5);const yl=yD(hy),lp=isLY(hy);let cv=29,kv=30;if(yl===355||yl===385)cv=30;if(yl===353||yl===383)kv=29;const ml=lp?[30,cv,kv,29,30,30,29,30,29,30,29,30,29]:[30,cv,kv,29,30,29,30,29,30,29,30,29];let hm=0,rem=dd;while(hm<ml.length&&rem>=ml[hm]){rem-=ml[hm];hm++}let hd=rem+1;if(hm>=ml.length)hm=ml.length-1;if(hd<1)hd=1;if(hd>30)hd=30;const mn=lp?['תשרי','חשוון','כסלו','טבת','שבט',"אדר א'",'אדר ב\\'','ניסן','אייר','סיוון','תמוז','אב','אלול']:['תשרי','חשוון','כסלו','טבת','שבט','אדר','ניסן','אייר','סיוון','תמוז','אב','אלול'];return{formatted:ds(hd)+' '+(mn[hm]||'')+' '+gy(hy)}}function ds(d){const o=['','א\\'','ב\\'','ג\\'','ד\\'','ה\\'','ו\\'','ז\\'','ח\\'','ט\\''];const t=['','י\\'','כ\\'','ל\\''];if(d===15)return'ט"ו';if(d===16)return'ט"ז';if(d<10)return o[d];if(d===10)return'י\\'';if(d===20)return'כ\\'';if(d===30)return'ל\\'';return t[Math.floor(d/10)]+o[d%10]}function gy(y){const v=y%1000;const h=['','ק','ר','ש','ת','תק','תר','תש','תת','תתק'];const ta=['','י','כ','ל','מ','נ','ס','ע','פ','צ'];const oa=['','א','ב','ג','ד','ה','ו','ז','ח','ט'];const hv=Math.floor(v/100),tv=Math.floor(v%100/10),ov=v%10;let r='';if(hv>0)r+=h[hv];if(tv===1&&ov===5)r+='טו';else if(tv===1&&ov===6)r+='טז';else r+=ta[tv]+oa[ov];if(r.length>1)r=r.slice(0,-1)+'"'+r.slice(-1);else if(r.length===1)r+='\\'';return'ה\\''+r}function fromDateString(s){if(!s)return'';const p=s.split('/');if(p.length!==3)return'';try{return convert(parseInt(p[2]),parseInt(p[1]),parseInt(p[0])).formatted}catch(e){return''}}return{convert,fromDateString}})();`;
+}
+
+function buildEventsManager(){
+return `const EventsManager=(()=>{let events=[],cF='all';const IC={birthday:'🎂',wedding:'💒',barMitzvah:'📖',memorial:'🕯️',holiday:'🕎',other:'📌'};const LB={birthday:'יום הולדת',wedding:'חתונה',barMitzvah:'בר/בת מצווה',memorial:'אזכרה',holiday:'חג',other:'אחר'};function setEvents(e){events=e}async function load(){events=await FirebaseDB.getEvents()}function getAll(){return events}function openAddEvent(eid){document.getElementById('eventForm').reset();document.getElementById('eventId').value='';const s=document.getElementById('eventParticipants');s.innerHTML='';App.getMembers().forEach(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=m.firstName+' '+m.lastName;s.appendChild(o)});if(eid){const ev=events.find(e=>e.id===eid);if(ev){document.getElementById('eventModalTitle').innerHTML='✏️';document.getElementById('eventId').value=ev.id;document.getElementById('eventName').value=ev.name||'';document.getElementById('eventType').value=ev.type||'';document.getElementById('eventDate').value=ev.date||'';document.getElementById('eventTime').value=ev.time||'';document.getElementById('eventLocation').value=ev.location||'';document.getElementById('eventDescription').value=ev.description||'';document.getElementById('eventRecurring').value=ev.recurring||'no';if(ev.participants)Array.from(s.options).forEach(o=>{o.selected=ev.participants.includes(o.value)})}}else document.getElementById('eventModalTitle').innerHTML='🎉 אירוע';App.openModal('eventModal')}async function saveEvent(e){e.preventDefault();const eid=document.getElementById('eventId').value;const ps=Array.from(document.getElementById('eventParticipants').selectedOptions).map(o=>o.value);const d={id:eid||App.generateId(),name:document.getElementById('eventName').value.trim(),type:document.getElementById('eventType').value,date:document.getElementById('eventDate').value.trim(),time:document.getElementById('eventTime').value,location:document.getElementById('eventLocation').value.trim(),description:document.getElementById('eventDescription').value.trim(),participants:ps,recurring:document.getElementById('eventRecurring').value,createdAt:eid?(events.find(x=>x.id===eid)?.createdAt||new Date().toISOString()):new Date().toISOString()};await FirebaseDB.saveEvent(d);const i=events.findIndex(x=>x.id===d.id);if(i!==-1)events[i]=d;else events.push(d);App.closeModal('eventModal');App.showToast(eid?'✏️':'🎉');render()}async function deleteEvent(id){await FirebaseDB.deleteEvent(id);events=events.filter(e=>e.id!==id);App.showToast('נמחק','warning');render()}function confirmDelete(id){const ev=events.find(e=>e.id===id);if(!ev)return;document.getElementById('confirmTitle').textContent='מחיקה?';document.getElementById('confirmMessage').textContent=ev.name;document.getElementById('confirmBtn').onclick=()=>{deleteEvent(id);App.closeModal('confirmModal')};App.openModal('confirmModal')}function filter(t,el){cF=t;document.querySelectorAll('.events-filters .filter-chip').forEach(c=>c.classList.remove('active'));if(el)el.classList.add('active');render()}function pDS(s){if(!s)return null;const p=s.split('/');if(p.length!==3)return null;return new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]))}function dU(s){const d=pDS(s);if(!d)return 9999;const t=new Date();t.setHours(0,0,0,0);d.setHours(0,0,0,0);return Math.ceil((d-t)/864e5)}function render(){const c=document.getElementById('eventsList');if(!c)return;let f=cF==='all'?events:events.filter(e=>e.type===cF);f.sort((a,b)=>{const da=pDS(a.date),db=pDS(b.date);return(da||new Date(9999,0))-(db||new Date(9999,0))});if(!f.length){c.innerHTML='<div class="empty-state"><div class="icon">🎉</div><h3>אין</h3><button class="btn btn-primary" onclick="EventsManager.openAddEvent()">➕</button></div>';return}const ms=App.getMembers();const mo=['ינו','פבר','מרץ','אפר','מאי','יונ','יול','אוג','ספט','אוק','נוב','דצמ'];c.innerHTML=f.map(ev=>{const d=pDS(ev.date);const days=dU(ev.date);let dl='',dc='';if(days===0){dl='היום!';dc='today'}else if(days===1)dl='מחר';else if(days>0)dl='עוד '+days;else{dl='עבר';dc='past'}const ns=(ev.participants||[]).map(pid=>{const m=ms.find(x=>x.id===pid);return m?m.firstName:''}).filter(Boolean).join(', ');return'<div class="event-card"><div class="event-icon '+(ev.type||'other')+'">'+(IC[ev.type]||'📌')+'</div><div class="event-info"><div class="event-name">'+ev.name+'</div><div class="event-meta"><span>📌 '+(LB[ev.type]||'')+'</span>'+(ev.location?'<span>📍 '+ev.location+'</span>':'')+'</div>'+(ns?'<div class="event-participants">👥 '+ns+'</div>':'')+'</div><div class="event-date-box"><div class="day">'+(d?d.getDate():'?')+'</div><div class="month">'+(d?mo[d.getMonth()]:'')+'</div><div class="days-left '+dc+'">'+dl+'</div></div><div class="event-actions"><button class="btn-ghost" onclick="EventsManager.openAddEvent(\\''+ev.id+'\\')">✏️</button><button class="btn-ghost" style="color:#f44336" onclick="EventsManager.confirmDelete(\\''+ev.id+'\\')">🗑️</button></div></div>'}).join('')}function renderUpcoming(cid){const c=document.getElementById(cid);if(!c)return;const up=events.filter(e=>dU(e.date)>=0).sort((a,b)=>dU(a.date)-dU(b.date)).slice(0,5);if(!up.length){c.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px">—</div>';return}c.innerHTML=up.map(ev=>{const d=dU(ev.date);const i=IC[ev.type]||'📌';const l=d===0?'🎉 היום!':d===1?'מחר':'עוד '+d;return'<div style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;margin-bottom:5px;background:'+(d<=7?'#FFF8E1':'')+'"><span style="font-size:1.3em">'+i+'</span><div style="flex:1"><div style="font-weight:600;font-size:.9em">'+ev.name+'</div><div style="font-size:.8em;color:var(--text-muted)">'+ev.date+'</div></div><span style="background:'+(d===0?'#f44336':d<=7?'var(--accent)':'var(--primary)')+';color:#fff;padding:3px 10px;border-radius:12px;font-size:.78em;font-weight:600">'+l+'</span></div>'}).join('')}return{load,getAll,setEvents,openAddEvent,saveEvent,deleteEvent,confirmDelete,filter,render,renderUpcoming}})();`;
+}
+
+function buildDragConnect(){
+return `const DragConnect=(()=>{let active=false,sId=null,lineEl=null,sX=0,sY=0;function toggleMode(){active=!active;const b=document.getElementById('connectModeBtn');const i=document.getElementById('connectInstructions');if(active){b.classList.add('btn-primary');b.classList.remove('btn-outline');b.innerHTML='🔗 פעיל';i.style.display='flex';eN()}else{b.classList.remove('btn-primary');b.classList.add('btn-outline');b.innerHTML='🔗 קישור';i.style.display='none';dN();cancel()}}function eN(){document.querySelectorAll('.tree-node-content').forEach(n=>{n.classList.add('connectable');n.addEventListener('mousedown',onMD);n.addEventListener('touchstart',onTS,{passive:false})})}function dN(){document.querySelectorAll('.tree-node-content').forEach(n=>{n.classList.remove('connectable','drag-source','drag-target');n.removeEventListener('mousedown',onMD);n.removeEventListener('touchstart',onTS)})}function onMD(e){if(!active)return;e.preventDefault();e.stopPropagation();sId=this.dataset.memberId;if(!sId)return;this.classList.add('drag-source');const r=this.getBoundingClientRect();sX=r.left+r.width/2;sY=r.top+r.height/2;cL();document.addEventListener('mousemove',onMM);document.addEventListener('mouseup',onMU)}function onTS(e){if(!active)return;e.preventDefault();sId=this.dataset.memberId;if(!sId)return;this.classList.add('drag-source');const r=this.getBoundingClientRect();sX=r.left+r.width/2;sY=r.top+r.height/2;cL();document.addEventListener('touchmove',onTM,{passive:false});document.addEventListener('touchend',onTE)}function cL(){lineEl=document.createElementNS('http://www.w3.org/2000/svg','svg');lineEl.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999';lineEl.innerHTML='<line id="dl" x1="'+sX+'" y1="'+sY+'" x2="'+sX+'" y2="'+sY+'" stroke="#4CAF50" stroke-width="3" stroke-dasharray="8,4"/>';document.body.appendChild(lineEl)}function uL(x,y){if(!lineEl)return;const l=lineEl.querySelector('#dl');if(l){l.setAttribute('x2',x);l.setAttribute('y2',y)}document.querySelectorAll('.tree-node-content').forEach(n=>{n.classList.remove('drag-target');const r=n.getBoundingClientRect();if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom&&n.dataset.memberId!==sId)n.classList.add('drag-target')})}function onMM(e){uL(e.clientX,e.clientY)}function onTM(e){e.preventDefault();uL(e.touches[0].clientX,e.touches[0].clientY)}function onMU(e){fin(e.clientX,e.clientY);document.removeEventListener('mousemove',onMM);document.removeEventListener('mouseup',onMU)}function onTE(e){fin(e.changedTouches[0].clientX,e.changedTouches[0].clientY);document.removeEventListener('touchmove',onTM);document.removeEventListener('touchend',onTE)}function fin(x,y){let tid=null;document.querySelectorAll('.tree-node-content').forEach(n=>{const r=n.getBoundingClientRect();if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom&&n.dataset.memberId!==sId)tid=n.dataset.memberId;n.classList.remove('drag-source','drag-target')});rL();if(sId&&tid)showDlg(sId,tid);sId=null}function cancel(){sId=null;rL();document.querySelectorAll('.tree-node-content').forEach(n=>n.classList.remove('drag-source','drag-target'))}function rL(){if(lineEl){lineEl.remove();lineEl=null}}function showDlg(fid,tid){const ms=App.getMembers(),f=ms.find(m=>m.id===fid),t=ms.find(m=>m.id===tid);if(!f||!t)return;const fc=f.gender==='male'?'var(--male)':'var(--female)',tc=t.gender==='male'?'var(--male)':'var(--female)';document.getElementById('connectContent').innerHTML='<div style="text-align:center;margin-bottom:20px"><div style="display:flex;align-items:center;justify-content:center;gap:20px"><div><div style="width:50px;height:50px;border-radius:50%;background:'+fc+';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;margin:0 auto 5px">'+App.getInitials(f.firstName,f.lastName)+'</div><div style="font-weight:600;font-size:.9em">'+f.firstName+'</div></div><span style="font-size:1.5em">🔗</span><div><div style="width:50px;height:50px;border-radius:50%;background:'+tc+';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;margin:0 auto 5px">'+App.getInitials(t.firstName,t.lastName)+'</div><div style="font-weight:600;font-size:.9em">'+t.firstName+'</div></div></div></div><div class="form-group" style="margin-bottom:15px"><label class="form-label">סוג:</label><select class="form-select" id="connectType"><option value="parent-child">'+f.firstName+' הורה של '+t.firstName+'</option><option value="child-parent">'+t.firstName+' הורה של '+f.firstName+'</option><option value="spouse">בני זוג</option><option value="ex-spouse">לשעבר</option></select></div><div style="display:flex;gap:10px;justify-content:center"><button class="btn btn-outline" onclick="App.closeModal(\\'connectModal\\')">ביטול</button><button class="btn btn-primary" onclick="DragConnect.apply(\\''+fid+'\\',\\''+tid+'\\')">✅ חבר</button></div>';App.openModal('connectModal')}async function apply(fid,tid){const t=document.getElementById('connectType').value;const ms=App.getMembers(),f=ms.find(m=>m.id===fid),tr=ms.find(m=>m.id===tid);if(!f||!tr)return;if(t==='parent-child'){tr.parentId=fid;await FirebaseDB.saveMember(tr)}else if(t==='child-parent'){f.parentId=tid;await FirebaseDB.saveMember(f)}else{f.spouseId=tid;tr.spouseId=fid;if(t==='ex-spouse'){f.isExSpouse=true;tr.isExSpouse=true}await FirebaseDB.saveMember(f);await FirebaseDB.saveMember(tr)}App.closeModal('connectModal');App.showToast('🔗');App.refreshTree()}document.addEventListener('keydown',e=>{if(e.key==='Escape'&&active&&sId)cancel()});return{toggleMode,apply,isActive:()=>active}})();`;
+}
+
+function buildTreeRenderer(){
+return `const TreeRenderer=(()=>{let lv=3;function setLevel(n,el){lv=n;document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));if(el)el.classList.add('active');render()}function populateRootSelect(){const s=document.getElementById('treeRoot');if(!s)return;const ms=App.getMembers(),cv=s.value;s.innerHTML='<option value="">--</option>';ms.forEach(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=m.firstName+' '+m.lastName;s.appendChild(o)});if(cv&&ms.find(m=>m.id===cv))s.value=cv;else{const sl=ms.find(m=>m.relationType==='self');if(sl)s.value=sl.id;else if(ms.length)s.value=ms[0].id}}function render(){const w=document.getElementById('treeWrapper');if(!w)return;const rid=document.getElementById('treeRoot')?.value;const sd=document.getElementById('showDivorced')?.checked??true;const sdc=document.getElementById('showDeceased')?.checked??true;const ms=App.getMembers();if(!rid||!ms.length){w.innerHTML='<div class="empty-state"><div class="icon">🌲</div><h3>בחר שורש</h3></div>';return}const root=ms.find(m=>m.id===rid);if(!root)return;const vis=new Set();function build(p,l){if(!p||l>lv||vis.has(p.id))return'';vis.add(p.id);if(p.status==='deceased'&&!sdc)return'';const sps=[];ms.forEach(m=>{if(vis.has(m.id))return;if(m.spouseId===p.id||p.spouseId===m.id){const ex=m.isExSpouse||m.relationType==='ex-spouse';if(ex&&!sd)return;if(m.status==='deceased'&&!sdc)return;sps.push({member:m,isEx:ex})}});const pids=[p.id,...sps.map(s=>s.member.id)];const ch=ms.filter(c=>{if(c.status==='deceased'&&!sdc)return false;return pids.includes(c.parentId)});let h='<div class="tree-node"><div class="couple-display">';h+=nH(p);sps.forEach(sp=>{vis.add(sp.member.id);h+='<div class="couple-link-box">';if(sp.isEx)h+='<span class="ex-label">💔</span>';h+='<span class="couple-link">'+(sp.isEx?'💔':'❤️')+'</span></div>';h+=nH(sp.member)});h+='</div>';if(ch.length&&l<lv){h+='<div class="tree-connector"></div><div class="children-container">';ch.forEach(c=>{if(!vis.has(c.id))h+='<div class="child-branch">'+build(c,l+1)+'</div>'});h+='</div>'}h+='</div>';return h}function nH(p){const age=App.calculateAge(p.birthDate,p.deathDate);let gc=p.gender==='male'?'male':'female';if(p.status==='deceased')gc='deceased';const heb=HebrewDate.fromDateString(p.birthDate);const ini=App.getInitials(p.firstName,p.lastName);const bg=p.gender==='male'?'var(--male)':'var(--female)';const cm=DragConnect.isActive();return'<div class="tree-node-content '+gc+(cm?' connectable':'')+'" data-member-id="'+p.id+'" '+(cm?'':'onclick="App.viewMember(\\''+p.id+'\\')"')+'><div class="tree-node-photo">'+(p.photo?'<img src="'+p.photo+'">':'<div class="initials" style="background:'+bg+'">'+ini+'</div>')+'</div><div class="tree-node-name">'+p.firstName+' '+p.lastName+'</div><div class="tree-node-dates">'+(age!==null?'גיל '+age:'')+'</div>'+(heb?'<div class="tree-node-hebrew">🕎 '+heb+'</div>':'')+'<div class="tree-node-relation">'+(App.RELATION_LABELS[p.relationType]||'')+'</div>'+(p.status==='deceased'?'<div style="font-size:.68em">🕯️</div>':'')+'</div>'}w.innerHTML=build(root,1);if(DragConnect.isActive()){DragConnect.toggleMode();DragConnect.toggleMode()}}return{setLevel,populateRootSelect,render}})();`;
+}
+
+function buildApp(){
+return `const App=(()=>{let members=[],editingId=null;const RELATION_LABELS={'self':'אני','father':'אבא','mother':'אמא','spouse':'בן/בת זוג','ex-spouse':'לשעבר','son':'בן','daughter':'בת','brother':'אח','sister':'אחות','half-brother':'אח חורג','half-sister':'אחות חורגת','grandfather':'סבא','grandmother':'סבתא','uncle':'דוד','aunt':'דודה','cousin-male':'בן דוד','cousin-female':'בת דודה','grandson':'נכד','granddaughter':'נכדה','nephew':'אחיין','niece':'אחיינית','father-in-law':'חם','mother-in-law':'חמות','brother-in-law':'גיס','sister-in-law':'גיסה','son-in-law':'חתן','daughter-in-law':'כלה','other':'אחר'};const MR=[{v:'self',l:'👤 אני'},{v:'father',l:'👨 אבא'},{v:'spouse',l:'💑 בן זוג'},{v:'ex-spouse',l:'💔 לשעבר'},{v:'son',l:'👦 בן'},{v:'brother',l:'👦 אח'},{v:'half-brother',l:'👦 חורג'},{v:'grandfather',l:'👴 סבא'},{v:'uncle',l:'👨 דוד'},{v:'cousin-male',l:'👦 בן דוד'},{v:'grandson',l:'👦 נכד'},{v:'nephew',l:'👦 אחיין'},{v:'father-in-law',l:'👨 חם'},{v:'brother-in-law',l:'👨 גיס'},{v:'son-in-law',l:'👨 חתן'},{v:'other',l:'👤 אחר'}];const FR=[{v:'self',l:'👤 אני'},{v:'mother',l:'👩 אמא'},{v:'spouse',l:'💑 בת זוג'},{v:'ex-spouse',l:'💔 לשעבר'},{v:'daughter',l:'👧 בת'},{v:'sister',l:'👧 אחות'},{v:'half-sister',l:'👧 חורגת'},{v:'grandmother',l:'👵 סבתא'},{v:'aunt',l:'👩 דודה'},{v:'cousin-female',l:'👧 בת דודה'},{v:'granddaughter',l:'👧 נכדה'},{v:'niece',l:'👧 אחיינית'},{v:'mother-in-law',l:'👩 חמות'},{v:'sister-in-law',l:'👩 גיסה'},{v:'daughter-in-law',l:'👩 כלה'},{v:'other',l:'👤 אחר'}];function generateId(){return Date.now().toString(36)+Math.random().toString(36).substr(2)}function getInitials(f,l){return(f?.[0]||'')+(l?.[0]||'')}function pDS(s){if(!s)return null;const p=s.split('/');if(p.length!==3)return null;return new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]))}function calculateAge(b,d){const birth=pDS(b);if(!birth)return null;const end=d?pDS(d):new Date();if(!end)return null;let a=end.getFullYear()-birth.getFullYear();const m=end.getMonth()-birth.getMonth();if(m<0||(m===0&&end.getDate()<birth.getDate()))a--;return a}function formatDate(s){const d=pDS(s);if(!d)return s||'';return d.toLocaleDateString('he-IL',{year:'numeric',month:'long',day:'numeric'})}function formatDateInput(i){let v=i.value.replace(/[^\\d]/g,'');if(v.length>8)v=v.substr(0,8);if(v.length>=4)v=v.substr(0,2)+'/'+v.substr(2,2)+'/'+v.substr(4);else if(v.length>=2)v=v.substr(0,2)+'/'+v.substr(2);i.value=v}function showToast(m,t){t=t||'success';const c=document.getElementById('toastContainer');const el=document.createElement('div');el.className='toast '+t;el.innerHTML='<span style="font-size:1.2em">'+({success:'✅',error:'❌',warning:'⚠️'}[t]||'ℹ️')+'</span><span style="font-weight:500">'+m+'</span>';c.appendChild(el);setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.remove(),300)},3500)}function openModal(id){document.getElementById(id)?.classList.add('active');document.body.style.overflow='hidden'}function closeModal(id){document.getElementById(id)?.classList.remove('active');document.body.style.overflow=''}function switchPage(p){document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('active'));document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));document.getElementById('page-'+p)?.classList.add('active');document.querySelector('[data-page="'+p+'"]')?.classList.add('active');if(p==='dashboard')renderDashboard();if(p==='members')renderMembers();if(p==='tree'){TreeRenderer.populateRootSelect();TreeRenderer.render()}if(p==='birthdays')BirthdayCalendar.render();if(p==='events')EventsManager.render()}async function initAfterLogin(){if(!Sharing.canEdit())document.body.classList.add('viewer-mode');else document.body.classList.remove('viewer-mode');Sharing.listenToTree(()=>{if(!Sharing.canEdit())document.body.classList.add('viewer-mode');else document.body.classList.remove('viewer-mode')});FirebaseDB.listenToMembers(m=>{members=m;const a=document.querySelector('.nav-tab.active')?.dataset?.page;if(a)switchPage(a)});FirebaseDB.listenToEvents(e=>{EventsManager.setEvents(e);const a=document.querySelector('.nav-tab.active')?.dataset?.page;if(a==='events')EventsManager.render();if(a==='dashboard')EventsManager.renderUpcoming('upcomingEvents')});members=await FirebaseDB.getMembers();await EventsManager.load();if(!members.length&&Sharing.isOwner())loadDemo();renderDashboard();showToast('ברוך הבא! 🌳')}function updateRelationOptions(){const g=document.getElementById('gender').value;const s=document.getElementById('relationType');const cv=s.value;s.innerHTML='<option value="">--</option>';(g==='male'?MR:g==='female'?FR:[]).forEach(o=>{const el=document.createElement('option');el.value=o.v;el.textContent=o.l;if(o.v===cv)el.selected=true;s.appendChild(el)})}function popParent(cv){const s=document.getElementById('parentId');s.innerHTML='<option value="">--</option>';members.forEach(m=>{if(m.id!==editingId){const o=document.createElement('option');o.value=m.id;o.textContent=m.firstName+' '+m.lastName;if(cv===m.id)o.selected=true;s.appendChild(o)}})}function popSpouse(cv){const s=document.getElementById('spouseId');if(!s)return;s.innerHTML='<option value="">--</option>';members.forEach(m=>{if(m.id!==editingId){const o=document.createElement('option');o.value=m.id;o.textContent=m.firstName+' '+m.lastName;if(cv===m.id)o.selected=true;s.appendChild(o)}})}function toggleExtraFields(){const x=document.getElementById('extraFields');const i=document.getElementById('expandIcon');if(x.style.display==='none'){x.style.display='';i.classList.add('open');popSpouse()}else{x.style.display='none';i.classList.remove('open')}}function toggleDeathDate(){document.getElementById('deathDateGroup').style.display=document.getElementById('status').value==='deceased'?'':'none'}function handlePhotoUpload(e){const f=e.target.files[0];if(!f)return;if(f.size>2*1024*1024){showToast('גדול מדי','error');return}const r=new FileReader();r.onload=ev=>{document.getElementById('photoPreviewImg').src=ev.target.result;document.getElementById('photoPreviewImg').style.display='';document.getElementById('photoPlaceholder').style.display='none'};r.readAsDataURL(f)}function openAddModal(){editingId=null;document.getElementById('modalTitle').innerHTML='➕ הוספה';document.getElementById('memberForm').reset();document.getElementById('memberId').value='';document.getElementById('photoPreviewImg').style.display='none';document.getElementById('photoPlaceholder').style.display='';document.getElementById('extraFields').style.display='none';document.getElementById('expandIcon').classList.remove('open');document.getElementById('deathDateGroup').style.display='none';document.getElementById('relationType').innerHTML='<option value="">-- מין --</option>';popParent();openModal('memberModal')}function openEditModal(id){const m=members.find(x=>x.id===id);if(!m)return;editingId=id;document.getElementById('modalTitle').innerHTML='✏️';document.getElementById('memberId').value=m.id;document.getElementById('firstName').value=m.firstName||'';document.getElementById('lastName').value=m.lastName||'';document.getElementById('gender').value=m.gender||'';updateRelationOptions();document.getElementById('relationType').value=m.relationType||'';document.getElementById('birthDate').value=m.birthDate||'';if(m.photo){document.getElementById('photoPreviewImg').src=m.photo;document.getElementById('photoPreviewImg').style.display='';document.getElementById('photoPlaceholder').style.display='none'}else{document.getElementById('photoPreviewImg').style.display='none';document.getElementById('photoPlaceholder').style.display=''}popParent(m.parentId);document.getElementById('parentId').value=m.parentId||'';const has=m.spouseId||m.phone||m.email||m.address||m.occupation||m.birthPlace||m.notes||m.status==='deceased';if(has){document.getElementById('extraFields').style.display='';document.getElementById('expandIcon').classList.add('open');popSpouse(m.spouseId);document.getElementById('spouseId').value=m.spouseId||'';document.getElementById('status').value=m.status||'alive';document.getElementById('deathDate').value=m.deathDate||'';document.getElementById('deathDateGroup').style.display=m.status==='deceased'?'':'none';document.getElementById('birthPlace').value=m.birthPlace||'';document.getElementById('phone').value=m.phone||'';document.getElementById('email').value=m.email||'';document.getElementById('address').value=m.address||'';document.getElementById('occupation').value=m.occupation||'';document.getElementById('notes').value=m.notes||''}else{document.getElementById('extraFields').style.display='none';document.getElementById('expandIcon').classList.remove('open')}openModal('memberModal')}async function saveMember(e){e.preventDefault();const pi=document.getElementById('photoPreviewImg');const photo=pi.style.display!=='none'?pi.src:'';const d={id:editingId||generateId(),firstName:document.getElementById('firstName').value.trim(),lastName:document.getElementById('lastName').value.trim(),gender:document.getElementById('gender').value,relationType:document.getElementById('relationType').value,parentId:document.getElementById('parentId').value||null,birthDate:document.getElementById('birthDate').value.trim(),photo,spouseId:document.getElementById('spouseId')?.value||null,status:document.getElementById('status')?.value||'alive',deathDate:document.getElementById('deathDate')?.value||null,birthPlace:document.getElementById('birthPlace')?.value?.trim()||'',phone:document.getElementById('phone')?.value?.trim()||'',email:document.getElementById('email')?.value?.trim()||'',address:document.getElementById('address')?.value?.trim()||'',occupation:document.getElementById('occupation')?.value?.trim()||'',notes:document.getElementById('notes')?.value?.trim()||'',createdAt:editingId?(members.find(m=>m.id===editingId)?.createdAt||new Date().toISOString()):new Date().toISOString(),updatedAt:new Date().toISOString()};if(d.spouseId){const sp=members.find(m=>m.id===d.spouseId);if(sp&&!sp.spouseId){sp.spouseId=d.id;await FirebaseDB.saveMember(sp)}}if(editingId){const old=members.find(m=>m.id===editingId);if(old?.spouseId&&old.spouseId!==d.spouseId){const os=members.find(m=>m.id===old.spouseId);if(os?.spouseId===editingId){os.spouseId=null;await FirebaseDB.saveMember(os)}}const i=members.findIndex(m=>m.id===editingId);if(i!==-1)members[i]=d}else members.push(d);await FirebaseDB.saveMember(d);closeModal('memberModal');showToast(editingId?'✏️':'🎉');rCP()}function confirmDelete(id){const m=members.find(x=>x.id===id);if(!m)return;document.getElementById('confirmTitle').textContent=m.firstName+' '+m.lastName;document.getElementById('confirmMessage').textContent='למחוק?';document.getElementById('confirmBtn').onclick=async()=>{await delMember(id);closeModal('confirmModal')};openModal('confirmModal')}async function delMember(id){for(const m of members){let ch=false;if(m.parentId===id){m.parentId=null;ch=true}if(m.spouseId===id){m.spouseId=null;ch=true}if(ch)await FirebaseDB.saveMember(m)}members=members.filter(m=>m.id!==id);await FirebaseDB.deleteMember(id);showToast('נמחק','warning');rCP()}function viewMember(id){const m=members.find(x=>x.id===id);if(!m)return;const age=calculateAge(m.birthDate,m.deathDate);const par=m.parentId?members.find(x=>x.id===m.parentId):null;const sp=m.spouseId?members.find(x=>x.id===m.spouseId):null;const ch=members.filter(x=>x.parentId===id);const heb=HebrewDate.fromDateString(m.birthDate);const bg=m.gender==='male'?'var(--male)':'var(--female)';let h='<div class="view-header">';if(m.photo)h+='<div class="view-avatar"><img src="'+m.photo+'"></div>';else h+='<div class="view-avatar"><div class="initials" style="background:'+bg+'">'+getInitials(m.firstName,m.lastName)+'</div></div>';h+='<h2>'+m.firstName+' '+m.lastName+'</h2><span class="relation-badge">'+(RELATION_LABELS[m.relationType]||'')+'</span>';if(m.status==='deceased')h+=' <span class="deceased-badge" style="position:static;display:inline-block">🕯️</span>';h+='</div><div class="view-details">';[{l:'🎂 גיל',v:age!==null?String(age):''},{l:'📅 לידה',v:formatDate(m.birthDate)},{l:'🕎 עברי',v:heb},{l:'📍 מקום',v:m.birthPlace},{l:'📱 טלפון',v:m.phone},{l:'📧 אימייל',v:m.email},{l:'📍 כתובת',v:m.address},{l:'💼 מקצוע',v:m.occupation},{l:'👨‍👩‍👧 הורה',v:par?par.firstName+' '+par.lastName:''},{l:'💑 זוג',v:sp?sp.firstName+' '+sp.lastName:''}].forEach(d=>{if(d.v)h+='<div class="view-detail"><strong>'+d.l+'</strong>'+d.v+'</div>'});h+='</div>';if(ch.length){h+='<div class="view-children"><strong>👶 ('+ch.length+'):</strong><div>';ch.forEach(c=>h+='<span class="view-child-chip" onclick="App.closeModal(\\'viewModal\\');App.viewMember(\\''+c.id+'\\')">'+c.firstName+'</span>');h+='</div></div>'}if(m.notes)h+='<div style="margin-top:12px;padding:10px;background:#FFF8E1;border-radius:8px;font-size:.9em">📝 '+m.notes+'</div>';h+='<div style="margin-top:18px;display:flex;gap:8px;justify-content:center">';if(Sharing.canEdit())h+='<button class="btn btn-primary btn-sm" onclick="App.closeModal(\\'viewModal\\');App.openEditModal(\\''+m.id+'\\')">✏️</button>';if(Sharing.canDelete())h+='<button class="btn btn-danger btn-sm" onclick="App.closeModal(\\'viewModal\\');App.confirmDelete(\\''+m.id+'\\')">🗑️</button>';h+='</div>';document.getElementById('viewContent').innerHTML=h;openModal('viewModal')}function renderDashboard(){const t=members.length,ml=members.filter(m=>m.gender==='male').length,fm=members.filter(m=>m.gender==='female').length;const ages=members.filter(m=>m.birthDate).map(m=>calculateAge(m.birthDate,m.deathDate)).filter(a=>a!==null);const avg=ages.length?Math.round(ages.reduce((a,b)=>a+b,0)/ages.length):0;document.getElementById('statsBar').innerHTML='<div class="stat-card"><div class="stat-icon" style="background:#E8F5E9;color:#2E7D32">👥</div><div class="stat-info"><h3>'+t+'</h3><p>בני משפחה</p></div></div><div class="stat-card"><div class="stat-icon" style="background:#E3F2FD;color:#1565C0">👨</div><div class="stat-info"><h3>'+ml+'</h3><p>זכרים</p></div></div><div class="stat-card"><div class="stat-icon" style="background:#FCE4EC;color:#C2185B">👩</div><div class="stat-info"><h3>'+fm+'</h3><p>נקבות</p></div></div><div class="stat-card"><div class="stat-icon" style="background:#FFF3E0;color:#E65100">📊</div><div class="stat-info"><h3>'+avg+'</h3><p>גיל ממוצע</p></div></div>';const rec=[...members].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,5);if(!rec.length)document.getElementById('recentMembers').innerHTML='<div class="empty-state"><div class="icon">👥</div><h3>ריק</h3><button class="btn btn-primary btn-sm" onclick="App.openAddModal()">➕</button></div>';else document.getElementById('recentMembers').innerHTML=rec.map(m=>{const age=calculateAge(m.birthDate,m.deathDate);const bg=m.gender==='male'?'var(--male)':'var(--female)';return'<div style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;cursor:pointer" onclick="App.viewMember(\\''+m.id+'\\')" onmouseover="this.style.background=\\'#f5f5f5\\'" onmouseout="this.style.background=\\'\\'"><div style="width:38px;height:38px;border-radius:50%;background:'+bg+';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.9em;flex-shrink:0;overflow:hidden">'+(m.photo?'<img src="'+m.photo+'" style="width:100%;height:100%;object-fit:cover">':getInitials(m.firstName,m.lastName))+'</div><div><div style="font-weight:600;font-size:.92em">'+m.firstName+' '+m.lastName+'</div><div style="font-size:.8em;color:var(--text-muted)">'+(RELATION_LABELS[m.relationType]||'')+(age!==null?' • '+age:'')+'</div></div></div>'}).join('');BirthdayCalendar.renderUpcomingWidget('upcomingBirthdays')}function renderMembers(){const q=(document.getElementById('searchInput')?.value||'').toLowerCase();let f=members;if(q)f=members.filter(m=>(m.firstName+' '+m.lastName).toLowerCase().includes(q));const g=document.getElementById('membersGrid');if(!f.length){g.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="icon">👥</div><h3>'+(q?'—':'ריק')+'</h3></div>';return}g.innerHTML=f.map(m=>{const age=calculateAge(m.birthDate,m.deathDate);const par=m.parentId?members.find(x=>x.id===m.parentId):null;const bg=m.gender==='male'?'var(--male)':'var(--female)';return'<div class="member-card '+m.gender+(m.status==='deceased'?' deceased':'')+'">'+(m.status==='deceased'?'<div class="deceased-badge">🕯️</div>':'')+'<div class="member-card-header"><div class="member-avatar">'+(m.photo?'<img src="'+m.photo+'">':'<div class="initials" style="background:'+bg+'">'+getInitials(m.firstName,m.lastName)+'</div>')+'</div><div><div class="member-name">'+m.firstName+' '+m.lastName+'</div><span class="relation-badge">'+(RELATION_LABELS[m.relationType]||'')+'</span></div></div><div class="member-details">'+(age!==null?'<div class="member-detail">🎂 '+age+'</div>':'')+(m.birthDate?'<div class="member-detail">📅 '+formatDate(m.birthDate)+'</div>':'')+(par?'<div class="member-detail">👨‍👩‍👧 '+par.firstName+'</div>':'')+'</div><div class="member-actions"><button class="btn btn-outline btn-sm" onclick="App.viewMember(\\''+m.id+'\\')">👁️</button><button class="btn btn-primary btn-sm" onclick="App.openEditModal(\\''+m.id+'\\')">✏️</button><button class="btn btn-danger btn-sm" onclick="App.confirmDelete(\\''+m.id+'\\')">🗑️</button></div></div>'}).join('')}function filterMembers(){renderMembers()}function exportData(){const d={members,events:EventsManager.getAll()};const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='family-tree.json';a.click();showToast('📥')}async function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async ev=>{try{const d=JSON.parse(ev.target.result);if(d.members){members=d.members;await FirebaseDB.saveAllMembers(members)}if(d.events){for(const ev of d.events)await FirebaseDB.saveEvent(ev);EventsManager.setEvents(d.events)}showToast('📤');rCP()}catch{showToast('שגיאה','error')}};r.readAsText(f);e.target.value=''}function rCP(){const a=document.querySelector('.nav-tab.active')?.dataset?.page||'dashboard';switchPage(a)}function refreshTree(){TreeRenderer.populateRootSelect();TreeRenderer.render()}async function loadDemo(){if(members.length)return;members=[{id:'d1',firstName:'אברהם',lastName:'כהן',gender:'male',relationType:'grandfather',parentId:null,spouseId:'d2',birthDate:'15/03/1945',status:'alive',photo:'',birthPlace:'ירושלים',phone:'',email:'',address:'',occupation:'',notes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()},{id:'d2',firstName:'שרה',lastName:'כהן',gender:'female',relationType:'grandmother',parentId:null,spouseId:'d1',birthDate:'20/07/1948',status:'alive',photo:'',birthPlace:'',phone:'',email:'',address:'',occupation:'',notes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()},{id:'d3',firstName:'יצחק',lastName:'כהן',gender:'male',relationType:'father',parentId:'d1',spouseId:'d4',birthDate:'08/11/1970',status:'alive',photo:'',birthPlace:'',phone:'',email:'',address:'',occupation:'מהנדס',notes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()},{id:'d4',firstName:'רבקה',lastName:'כהן',gender:'female',relationType:'mother',parentId:null,spouseId:'d3',birthDate:'25/04/1972',status:'alive',photo:'',birthPlace:'',phone:'',email:'',address:'',occupation:'',notes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()},{id:'d5',firstName:'דוד',lastName:'כהן',gender:'male',relationType:'self',parentId:'d3',spouseId:'d6',birthDate:'12/09/1995',status:'alive',photo:'',birthPlace:'',phone:'',email:'',address:'',occupation:'מפתח',notes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()},{id:'d6',firstName:'מיכל',lastName:'כהן',gender:'female',relationType:'spouse',parentId:null,spouseId:'d5',birthDate:'30/01/1997',status:'alive',photo:'',birthPlace:'',phone:'',email:'',address:'',occupation:'',notes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()},{id:'d7',firstName:'נועם',lastName:'כהן',gender:'male',relationType:'son',parentId:'d5',spouseId:null,birthDate:'15/06/2022',status:'alive',photo:'',birthPlace:'',phone:'',email:'',address:'',occupation:'',notes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()},{id:'d8',firstName:'יעל',lastName:'כהן',gender:'female',relationType:'sister',parentId:'d3',spouseId:null,birthDate:'22/03/1998',status:'alive',photo:'',birthPlace:'',phone:'',email:'',address:'',occupation:'רופאה',notes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()},{id:'d9',firstName:'אריאל',lastName:'כהן',gender:'male',relationType:'brother',parentId:'d3',spouseId:null,birthDate:'05/12/2001',status:'alive',photo:'',birthPlace:'',phone:'',email:'',address:'',occupation:'',notes:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}];await FirebaseDB.saveAllMembers(members);const dE=[{id:'ev1',name:'יום הולדת נועם',type:'birthday',date:'15/06/2025',time:'17:00',location:'תל אביב',participants:['d7','d5','d6'],description:'',recurring:'yearly',createdAt:new Date().toISOString()},{id:'ev2',name:'ליל סדר',type:'holiday',date:'12/04/2025',time:'19:30',location:'ירושלים',participants:['d1','d2','d3','d4','d5','d6','d7','d8','d9'],description:'',recurring:'yearly',createdAt:new Date().toISOString()}];for(const ev of dE)await FirebaseDB.saveEvent(ev);EventsManager.setEvents(dE)}document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.modal-overlay.active').forEach(m=>m.classList.remove('active'));document.body.style.overflow=''}});document.querySelectorAll('.modal-overlay').forEach(ov=>{ov.addEventListener('click',function(e){if(e.target===this){this.classList.remove('active');document.body.style.overflow=''}})});return{initAfterLogin,switchPage,openAddModal,openEditModal,saveMember,viewMember,confirmDelete,closeModal,openModal,filterMembers,showToast,handlePhotoUpload,formatDateInput,updateRelationOptions,toggleExtraFields,toggleDeathDate,exportData,importData,refreshTree,getMembers:()=>members,getInitials,calculateAge,generateId,RELATION_LABELS}})();`;
+}
+</script>
+</body>
+</html>
