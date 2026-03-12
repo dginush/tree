@@ -123,8 +123,18 @@ style="text-transform:uppercase;text-align:center;font-size:1.4em;letter-spacing
 </div>
 
 <!-- Tree -->
+<!-- Tree -->
 <div id="page-tree" class="page">
-<div class="card tree-page-card"><div class="card-header"><div class="card-title">🌴 עץ</div></div>
+<div class="card tree-page-card"><div class="card-header"><div class="card-title">🌴 עץ</div>
+<!-- Export Button - FIX #5 -->
+<div class="export-dropdown">
+    <button class="btn btn-outline btn-sm" onclick="TreeRenderer.toggleExportMenu()">📤 ייצוא</button>
+    <div class="export-dropdown-content" id="exportDropdownContent">
+        <button onclick="TreeRenderer.exportAsImage()">🖼️ ייצוא כתמונה (PNG)</button>
+        <button onclick="TreeRenderer.exportAsPDF()">📄 ייצוא כ-PDF</button>
+    </div>
+</div>
+</div>
 <div class="tree-toolbar">
 <div class="toolbar-group"><label>שורש:</label><select class="form-select compact" id="treeRoot" onchange="TreeRenderer.render()"></select></div>
 <div class="toolbar-group"><label>רמות:</label><div class="level-buttons">
@@ -137,6 +147,15 @@ style="text-transform:uppercase;text-align:center;font-size:1.4em;letter-spacing
 </div></div>
 <label class="checkbox-label"><input type="checkbox" id="showDivorced" checked onchange="TreeRenderer.render()"> 💔</label>
 <label class="checkbox-label"><input type="checkbox" id="showDeceased" checked onchange="TreeRenderer.render()"> 🕯️</label>
+<div class="toolbar-divider"></div>
+<!-- Zoom Controls - FIX #4 -->
+<div class="tree-zoom-controls">
+    <button class="zoom-btn" onclick="TreeRenderer.zoomOut()" title="הקטנה">−</button>
+    <span class="zoom-level-display" id="zoomLevelDisplay">100%</span>
+    <button class="zoom-btn" onclick="TreeRenderer.zoomIn()" title="הגדלה">+</button>
+    <button class="zoom-btn" onclick="TreeRenderer.zoomReset()" title="איפוס">↺</button>
+    <button class="zoom-btn" onclick="TreeRenderer.zoomFit()" title="התאם לחלון" style="font-size:0.8em">⊞</button>
+</div>
 <div class="toolbar-divider"></div>
 <button class="btn btn-outline btn-sm" id="connectModeBtn" onclick="DragConnect.toggleMode()">🔗 קישור</button>
 </div>

@@ -257,7 +257,7 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
 }
 
 /* ============================================
-   Tree Visual Redesign (Bugs #6, #7)
+   Tree Visual - FIXED VERSION
    ============================================ */
 .tree-family-unit {
     display: flex;
@@ -400,7 +400,25 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
     margin-top: 2px;
 }
 
-/* Connecting Lines */
+.tree-person-emoji {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8em;
+    border-radius: 50%;
+}
+
+.tree-person-date {
+    font-size: 0.7em;
+    color: #888;
+    margin-top: 1px;
+}
+
+/* ============================================
+   Connecting Lines - COMPLETELY REWRITTEN
+   ============================================ */
 .tree-vertical-line {
     width: 2px;
     height: 20px;
@@ -408,33 +426,22 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
     margin: 0 auto;
 }
 
-.tree-horizontal-line {
-    height: 2px;
-    background: #A5D6A7;
-    align-self: stretch;
-    margin: 0 40px;
-    position: relative;
-}
-
 .tree-children {
     display: flex;
     justify-content: center;
-    gap: 8px;
     position: relative;
-    padding-top: 20px;
+    padding-top: 0;
 }
 
-/* Horizontal line connecting siblings - ONLY for multiple children */
-.tree-children.multiple::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    height: 2px;
-    background: #A5D6A7;
-    /* Extend from center of first child to center of last child */
-    left: 0;
-    right: 0;
-    /* We'll trim with margin to approximate child centers */
+/* Family group spacing - FIX #2 */
+.tree-children > .tree-child-branch {
+    padding: 0 4px;
+}
+
+/* Separator between family groups - FIX #2 */
+.tree-children > .family-group-separator {
+    width: 30px;
+    flex-shrink: 0;
 }
 
 .tree-child-branch {
@@ -450,59 +457,39 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
     background: #A5D6A7;
 }
 
-/* Single child - no horizontal line needed */
-.tree-children:not(.multiple)::before {
-    display: none;
+/* Horizontal bracket connecting siblings - REWRITTEN for FIX #1 and #3 */
+.tree-horizontal-bracket {
+    position: relative;
+    height: 20px;
+    align-self: stretch;
 }
 
-/* Responsive tree container */
-.tree-container {
-    overflow: auto;
-    padding: 20px;
-    min-height: 400px;
-    border: 2px solid var(--border);
-    border-radius: var(--radius);
-    background: #FAFFF5;
+.tree-horizontal-bracket .h-line {
+    position: absolute;
+    top: 0;
+    height: 2px;
+    background: #A5D6A7;
 }
 
-.tree-wrapper {
-    display: inline-flex;
-    justify-content: center;
-    min-width: 100%;
-    padding: 20px 40px;
+.tree-horizontal-bracket .v-drop {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 20px;
+    background: #A5D6A7;
 }
 
-/* ============================================
-   Recurring Calendar Badge
-   ============================================ */
-.event-recurring-badge {
-    font-size: 0.7em;
-    padding: 2px 6px;
-    border-radius: 8px;
-    background: #E8F5E9;
-    color: #2E7D32;
+.tree-horizontal-bracket .v-stem {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 20px;
+    background: #A5D6A7;
 }
 
-/* Tree person emoji instead of initials */
-.tree-person-emoji {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.8em;
-    border-radius: 50%;
-}
-
-.tree-person-date {
-    font-size: 0.7em;
-    color: #888;
-    margin-top: 1px;
-}
-
-/* ============================================
-   Tree - Couple pair with child anchor
-   ============================================ */
+/* Couple pair */
 .couple-pair {
     display: flex;
     align-items: center;
@@ -511,11 +498,6 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
 }
 
 .couple-member {
-    position: relative;
-}
-
-/* The child anchor gets the connecting line from parents */
-.couple-member.is-child-anchor {
     position: relative;
 }
 
@@ -530,7 +512,6 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
     background: #A5D6A7;
 }
 
-/* Hide the default child connector when we have a couple */
 .tree-child-branch:has(.couple-pair) > .tree-child-connector {
     display: none;
 }
@@ -539,36 +520,117 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
     width: 15px;
 }
 
-/* Fix: vertical line from parents goes to center,
-   then horizontal line branches to children */
-.tree-children.multiple {
-    position: relative;
+/* ============================================
+   Zoom Controls - FIX #4
+   ============================================ */
+.tree-zoom-controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-left: 10px;
 }
 
-.tree-children.multiple::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    /* Approximate: skip half of first child width, end half before last child */
-    left: calc(50px);
-    right: calc(50px);
-    height: 2px;
-    background: #A5D6A7;
-}
-
-/* Ensure tree-person emoji styling */
-.tree-person-emoji {
-    width: 100%;
-    height: 100%;
+.zoom-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 2px solid var(--primary);
+    background: #fff;
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 1.1em;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.8em;
-    border-radius: 50%;
+    transition: all 0.2s;
 }
 
-.tree-person-date {
-    font-size: 0.7em;
-    color: #888;
-    margin-top: 1px;
+.zoom-btn:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+.zoom-btn.active {
+    background: var(--primary);
+    color: #fff;
+}
+
+.zoom-level-display {
+    font-size: 0.82em;
+    font-weight: 600;
+    color: var(--text-muted);
+    min-width: 40px;
+    text-align: center;
+}
+
+.tree-container {
+    overflow: auto;
+    padding: 20px;
+    min-height: 400px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: #FAFFF5;
+    position: relative;
+}
+
+.tree-wrapper {
+    display: inline-flex;
+    justify-content: center;
+    min-width: 100%;
+    padding: 20px 40px;
+    transform-origin: top center;
+    transition: transform 0.3s ease;
+}
+
+/* ============================================
+   Export Button - FIX #5
+   ============================================ */
+.export-tree-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.export-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.export-dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    min-width: 160px;
+    z-index: 100;
+    padding: 6px;
+    margin-top: 4px;
+}
+
+.export-dropdown-content.show {
+    display: block;
+}
+
+.export-dropdown-content button {
+    width: 100%;
+    padding: 8px 14px;
+    background: none;
+    border: none;
+    font-family: 'Heebo', sans-serif;
+    font-size: 0.88em;
+    text-align: right;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+}
+
+.export-dropdown-content button:hover {
+    background: #F1F8E9;
 }
