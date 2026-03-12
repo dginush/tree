@@ -278,24 +278,25 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 8px;
+    padding: 0 6px;
     position: relative;
+    align-self: center;
 }
 
 .couple-line {
-    width: 40px;
+    width: 35px;
     height: 2px;
-    background: #4CAF50;
+    background: #E91E63;
 }
 
 .couple-line.ex-line {
-    background: #f44336;
+    background: none;
     border-top: 2px dashed #f44336;
     height: 0;
 }
 
 .couple-line.married-line {
-    background: #4CAF50;
+    background: #E91E63;
 }
 
 .couple-symbol {
@@ -303,26 +304,27 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
     margin-top: 2px;
 }
 
-/* Person Node - Clean design without relation label (#7) */
+/* Person Node */
 .tree-person {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 10px 12px;
+    padding: 10px 12px 8px;
     border-radius: 12px;
     background: #fff;
     border: 2px solid #e0e0e0;
     cursor: pointer;
     transition: all 0.2s;
-    min-width: 90px;
-    max-width: 120px;
+    min-width: 95px;
+    max-width: 125px;
     position: relative;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
 .tree-person:hover {
     transform: translateY(-3px);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    z-index: 10;
 }
 
 .tree-person.male {
@@ -375,14 +377,14 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
 
 .tree-person-name {
     font-weight: 700;
-    font-size: 0.85em;
+    font-size: 0.82em;
     text-align: center;
     line-height: 1.2;
 }
 
 .tree-person-lastname {
     font-weight: 400;
-    font-size: 0.75em;
+    font-size: 0.72em;
     color: #666;
     text-align: center;
 }
@@ -398,17 +400,17 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
     margin-top: 2px;
 }
 
-/* Connecting Lines (#6) */
+/* Connecting Lines */
 .tree-vertical-line {
     width: 2px;
     height: 20px;
-    background: #bdbdbd;
+    background: #A5D6A7;
     margin: 0 auto;
 }
 
 .tree-horizontal-line {
     height: 2px;
-    background: #bdbdbd;
+    background: #A5D6A7;
     align-self: stretch;
     margin: 0 40px;
     position: relative;
@@ -417,19 +419,22 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
 .tree-children {
     display: flex;
     justify-content: center;
-    gap: 4px;
+    gap: 8px;
     position: relative;
+    padding-top: 20px;
 }
 
-/* Horizontal line connecting siblings */
-.tree-children::before {
+/* Horizontal line connecting siblings - ONLY for multiple children */
+.tree-children.multiple::before {
     content: '';
     position: absolute;
     top: 0;
-    left: 50px;
-    right: 50px;
     height: 2px;
-    background: #bdbdbd;
+    background: #A5D6A7;
+    /* Extend from center of first child to center of last child */
+    left: 0;
+    right: 0;
+    /* We'll trim with margin to approximate child centers */
 }
 
 .tree-child-branch {
@@ -442,24 +447,22 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
 .tree-child-connector {
     width: 2px;
     height: 20px;
-    background: #bdbdbd;
+    background: #A5D6A7;
 }
 
 /* Single child - no horizontal line needed */
-.tree-children:only-child::before {
+.tree-children:not(.multiple)::before {
     display: none;
 }
 
-/* When there's only one child, don't show horizontal line */
-.tree-children > .tree-child-branch:only-child .tree-child-connector {
-    height: 0;
-}
-
-/* Responsive tree */
+/* Responsive tree container */
 .tree-container {
     overflow: auto;
     padding: 20px;
     min-height: 400px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: #FAFFF5;
 }
 
 .tree-wrapper {
@@ -479,6 +482,7 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
     background: #E8F5E9;
     color: #2E7D32;
 }
+
 /* Tree person emoji instead of initials */
 .tree-person-emoji {
     width: 100%;
@@ -495,6 +499,7 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
     color: #888;
     margin-top: 1px;
 }
+
 /* ============================================
    Tree - Couple pair with child anchor
    ============================================ */
@@ -522,7 +527,7 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
     transform: translateX(-50%);
     width: 2px;
     height: 22px;
-    background: #bdbdbd;
+    background: #A5D6A7;
 }
 
 /* Hide the default child connector when we have a couple */
@@ -544,15 +549,11 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
     content: '';
     position: absolute;
     top: 0;
-    left: 50px;
-    right: 50px;
+    /* Approximate: skip half of first child width, end half before last child */
+    left: calc(50px);
+    right: calc(50px);
     height: 2px;
-    background: #bdbdbd;
-}
-
-/* Single child - no horizontal line */
-.tree-children:not(.multiple)::before {
-    display: none;
+    background: #A5D6A7;
 }
 
 /* Ensure tree-person emoji styling */
