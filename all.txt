@@ -258,7 +258,7 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
 }
 
 /* ============================================
-   Tree Visual Redesign (Bugs #6, #7)
+   Tree Visual - FIXED VERSION
    ============================================ */
 .tree-family-unit {
     display: flex;
@@ -401,7 +401,25 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
     margin-top: 2px;
 }
 
-/* Connecting Lines */
+.tree-person-emoji {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8em;
+    border-radius: 50%;
+}
+
+.tree-person-date {
+    font-size: 0.7em;
+    color: #888;
+    margin-top: 1px;
+}
+
+/* ============================================
+   Connecting Lines - COMPLETELY REWRITTEN
+   ============================================ */
 .tree-vertical-line {
     width: 2px;
     height: 20px;
@@ -409,33 +427,22 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
     margin: 0 auto;
 }
 
-.tree-horizontal-line {
-    height: 2px;
-    background: #A5D6A7;
-    align-self: stretch;
-    margin: 0 40px;
-    position: relative;
-}
-
 .tree-children {
     display: flex;
     justify-content: center;
-    gap: 8px;
     position: relative;
-    padding-top: 20px;
+    padding-top: 0;
 }
 
-/* Horizontal line connecting siblings - ONLY for multiple children */
-.tree-children.multiple::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    height: 2px;
-    background: #A5D6A7;
-    /* Extend from center of first child to center of last child */
-    left: 0;
-    right: 0;
-    /* We'll trim with margin to approximate child centers */
+/* Family group spacing - FIX #2 */
+.tree-children > .tree-child-branch {
+    padding: 0 4px;
+}
+
+/* Separator between family groups - FIX #2 */
+.tree-children > .family-group-separator {
+    width: 30px;
+    flex-shrink: 0;
 }
 
 .tree-child-branch {
@@ -451,59 +458,39 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
     background: #A5D6A7;
 }
 
-/* Single child - no horizontal line needed */
-.tree-children:not(.multiple)::before {
-    display: none;
+/* Horizontal bracket connecting siblings - REWRITTEN for FIX #1 and #3 */
+.tree-horizontal-bracket {
+    position: relative;
+    height: 20px;
+    align-self: stretch;
 }
 
-/* Responsive tree container */
-.tree-container {
-    overflow: auto;
-    padding: 20px;
-    min-height: 400px;
-    border: 2px solid var(--border);
-    border-radius: var(--radius);
-    background: #FAFFF5;
+.tree-horizontal-bracket .h-line {
+    position: absolute;
+    top: 0;
+    height: 2px;
+    background: #A5D6A7;
 }
 
-.tree-wrapper {
-    display: inline-flex;
-    justify-content: center;
-    min-width: 100%;
-    padding: 20px 40px;
+.tree-horizontal-bracket .v-drop {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 20px;
+    background: #A5D6A7;
 }
 
-/* ============================================
-   Recurring Calendar Badge
-   ============================================ */
-.event-recurring-badge {
-    font-size: 0.7em;
-    padding: 2px 6px;
-    border-radius: 8px;
-    background: #E8F5E9;
-    color: #2E7D32;
+.tree-horizontal-bracket .v-stem {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 20px;
+    background: #A5D6A7;
 }
 
-/* Tree person emoji instead of initials */
-.tree-person-emoji {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.8em;
-    border-radius: 50%;
-}
-
-.tree-person-date {
-    font-size: 0.7em;
-    color: #888;
-    margin-top: 1px;
-}
-
-/* ============================================
-   Tree - Couple pair with child anchor
-   ============================================ */
+/* Couple pair */
 .couple-pair {
     display: flex;
     align-items: center;
@@ -512,11 +499,6 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
 }
 
 .couple-member {
-    position: relative;
-}
-
-/* The child anchor gets the connecting line from parents */
-.couple-member.is-child-anchor {
     position: relative;
 }
 
@@ -531,7 +513,6 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
     background: #A5D6A7;
 }
 
-/* Hide the default child connector when we have a couple */
 .tree-child-branch:has(.couple-pair) > .tree-child-connector {
     display: none;
 }
@@ -540,24 +521,244 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
     width: 15px;
 }
 
-/* Fix: vertical line from parents goes to center,
-   then horizontal line branches to children */
-.tree-children.multiple {
+/* ============================================
+   Zoom Controls - FIX #4
+   ============================================ */
+.tree-zoom-controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-left: 10px;
+}
+
+.zoom-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 2px solid var(--primary);
+    background: #fff;
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 1.1em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.zoom-btn:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+.zoom-btn.active {
+    background: var(--primary);
+    color: #fff;
+}
+
+.zoom-level-display {
+    font-size: 0.82em;
+    font-weight: 600;
+    color: var(--text-muted);
+    min-width: 40px;
+    text-align: center;
+}
+
+.tree-container {
+    overflow: auto;
+    padding: 20px;
+    min-height: 400px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: #FAFFF5;
     position: relative;
 }
 
-.tree-children.multiple::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    /* Approximate: skip half of first child width, end half before last child */
-    left: calc(50px);
-    right: calc(50px);
-    height: 2px;
-    background: #A5D6A7;
+.tree-wrapper {
+    display: inline-flex;
+    justify-content: center;
+    min-width: 100%;
+    padding: 20px 40px;
+    transform-origin: top center;
+    transition: transform 0.3s ease;
 }
 
-/* Ensure tree-person emoji styling */
+/* ============================================
+   Export Button - FIX #5
+   ============================================ */
+.export-tree-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.export-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.export-dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    min-width: 160px;
+    z-index: 100;
+    padding: 6px;
+    margin-top: 4px;
+}
+
+.export-dropdown-content.show {
+    display: block;
+}
+
+.export-dropdown-content button {
+    width: 100%;
+    padding: 8px 14px;
+    background: none;
+    border: none;
+    font-family: 'Heebo', sans-serif;
+    font-size: 0.88em;
+    text-align: right;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+}
+
+.export-dropdown-content button:hover {
+    background: #F1F8E9;
+}
+/* ============================================
+   Tree Layout - REWRITTEN for SVG connectors
+   ============================================ */
+.tree-family-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.tree-couple {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    position: relative;
+    z-index: 2;
+}
+
+.couple-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 6px;
+    position: relative;
+    align-self: center;
+}
+
+.couple-line {
+    width: 35px;
+    height: 2px;
+    background: #E91E63;
+}
+
+.couple-line.ex-line {
+    background: none;
+    border-top: 2px dashed #f44336;
+    height: 0;
+}
+
+.couple-line.married-line {
+    background: #E91E63;
+}
+
+.couple-symbol {
+    font-size: 0.7em;
+    margin-top: 2px;
+}
+
+.couple-pair {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.couple-member {
+    position: relative;
+}
+
+.couple-spacer {
+    width: 15px;
+}
+
+/* Person Node */
+.tree-person {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 12px 8px;
+    border-radius: 12px;
+    background: #fff;
+    border: 2px solid #e0e0e0;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 95px;
+    max-width: 125px;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    z-index: 2;
+}
+
+.tree-person:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    z-index: 10;
+}
+
+.tree-person.male {
+    border-color: #90CAF9;
+    background: linear-gradient(135deg, #fff 0%, #E3F2FD 100%);
+}
+
+.tree-person.female {
+    border-color: #F48FB1;
+    background: linear-gradient(135deg, #fff 0%, #FCE4EC 100%);
+}
+
+.tree-person.deceased {
+    opacity: 0.7;
+    border-style: dashed;
+}
+
+.tree-person.connectable {
+    cursor: grab;
+    border-color: #4CAF50;
+}
+
+.tree-person-photo {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-bottom: 6px;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+.tree-person-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 .tree-person-emoji {
     width: 100%;
     height: 100%;
@@ -568,10 +769,555 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
     border-radius: 50%;
 }
 
+.tree-person-name {
+    font-weight: 700;
+    font-size: 0.82em;
+    text-align: center;
+    line-height: 1.2;
+}
+
 .tree-person-date {
     font-size: 0.7em;
     color: #888;
     margin-top: 1px;
+}
+
+.tree-person-age {
+    font-size: 0.7em;
+    color: #888;
+    margin-top: 2px;
+}
+
+/* Children layout */
+.tree-children-area {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 6px;
+    padding-top: 44px; /* Space for SVG connectors (GAP*2) */
+    position: relative;
+    z-index: 1;
+}
+
+.tree-child-branch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Family group separator - space between different families' children */
+.family-group-separator {
+    width: 30px;
+    flex-shrink: 0;
+}
+
+/* SVG connector overlay */
+.tree-svg-connectors {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Tree container */
+.tree-container {
+    overflow: auto;
+    padding: 20px;
+    min-height: 400px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: #FAFFF5;
+    position: relative;
+}
+
+.tree-wrapper {
+    display: inline-flex;
+    justify-content: center;
+    min-width: 100%;
+    padding: 20px 40px;
+    transform-origin: top center;
+    transition: transform 0.3s ease;
+    position: relative;
+}
+
+/* ============================================
+   Zoom Controls
+   ============================================ */
+.tree-zoom-controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-left: 10px;
+}
+
+.zoom-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 2px solid var(--primary);
+    background: #fff;
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 1.1em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.zoom-btn:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+.zoom-level-display {
+    font-size: 0.82em;
+    font-weight: 600;
+    color: var(--text-muted);
+    min-width: 40px;
+    text-align: center;
+}
+
+/* ============================================
+   Export Dropdown
+   ============================================ */
+.export-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.export-dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    min-width: 160px;
+    z-index: 100;
+    padding: 6px;
+    margin-top: 4px;
+}
+
+.export-dropdown-content.show {
+    display: block;
+}
+
+.export-dropdown-content button {
+    width: 100%;
+    padding: 8px 14px;
+    background: none;
+    border: none;
+    font-family: 'Heebo', sans-serif;
+    font-size: 0.88em;
+    text-align: right;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+}
+
+.export-dropdown-content button:hover {
+    background: #F1F8E9;
+}
+
+/* Hide old CSS connector elements - all drawing is via SVG now */
+.tree-vertical-line,
+.tree-child-connector,
+.tree-child-drop,
+.tree-vertical-stem,
+.tree-horizontal-line {
+    display: none !important;
+}
+
+/* Remove old ::before/::after connectors */
+.tree-children::before,
+.tree-children.multiple::before,
+.tree-child-branch::before,
+.couple-member.is-child-anchor::before {
+    display: none !important;
+}
+
+/* ============================================
+   TREE - Pure CSS Connectors (export-friendly)
+   ============================================ */
+
+/* Main tree container */
+.tree-container {
+    overflow: auto;
+    padding: 20px;
+    min-height: 400px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: #FAFFF5;
+    position: relative;
+}
+
+.tree-wrapper {
+    display: inline-flex;
+    justify-content: center;
+    min-width: 100%;
+    padding: 30px 50px;
+    transform-origin: top center;
+    transition: transform 0.3s ease;
+}
+
+/* Tree node structure */
+.tf-tree {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+/* Node content (the card or couple) */
+.tf-nc {
+    display: flex;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+}
+
+/* Vertical line from parent to children bracket */
+.tf-tree > .tf-children::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 20px;
+    background: #4CAF50;
+    border-radius: 1px;
+}
+
+/* Children container */
+.tf-children {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    position: relative;
+    padding-top: 20px;
+    margin-top: 20px;
+    gap: 0;
+}
+
+/* Horizontal bracket line - spans from first to last child center */
+.tf-children::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    height: 2px;
+    background: #4CAF50;
+    border-radius: 1px;
+    /* Will be calculated: from first child center to last child center */
+    left: var(--bracket-left, 50px);
+    right: var(--bracket-right, 50px);
+}
+
+/* Individual child branch */
+.tf-branch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    padding: 0 8px;
+}
+
+/* Vertical drop from bracket to child */
+.tf-branch::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 20px;
+    background: #4CAF50;
+    border-radius: 1px;
+    z-index: 1;
+}
+
+/* Family group separator */
+.tf-separator {
+    width: 35px;
+    flex-shrink: 0;
+    position: relative;
+}
+
+/* Couple display */
+.tf-couple {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+}
+
+.tf-couple-member {
+    position: relative;
+}
+
+.tf-couple-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 5px;
+}
+
+.tf-couple-line {
+    width: 30px;
+    height: 2px;
+    background: #E91E63;
+    border-radius: 1px;
+}
+
+.tf-couple-line.tf-ex {
+    background: none;
+    border-top: 2px dashed #f44336;
+    height: 0;
+}
+
+.tf-couple-heart {
+    font-size: 0.65em;
+    margin-top: 2px;
+    line-height: 1;
+}
+
+/* Person card */
+.tf-person {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 12px 8px;
+    border-radius: 12px;
+    background: #fff;
+    border: 2px solid #e0e0e0;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 95px;
+    max-width: 125px;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    z-index: 2;
+}
+
+.tf-person:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    z-index: 10;
+}
+
+.tf-person.male {
+    border-color: #90CAF9;
+    background: linear-gradient(135deg, #fff 0%, #E3F2FD 100%);
+}
+
+.tf-person.female {
+    border-color: #F48FB1;
+    background: linear-gradient(135deg, #fff 0%, #FCE4EC 100%);
+}
+
+.tf-person.deceased {
+    opacity: 0.7;
+    border-style: dashed;
+}
+
+.tf-person.connectable {
+    cursor: grab;
+    border-color: #4CAF50;
+}
+
+.tf-photo {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-bottom: 6px;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+.tf-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tf-emoji {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8em;
+    border-radius: 50%;
+}
+
+.tf-name {
+    font-weight: 700;
+    font-size: 0.82em;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.tf-date {
+    font-size: 0.7em;
+    color: #888;
+    margin-top: 1px;
+}
+
+.tf-age {
+    font-size: 0.7em;
+    color: #888;
+    margin-top: 2px;
+}
+
+/* ============================================
+   Connector line calculations via JS
+   ============================================ */
+
+/* When child is in a couple, the vertical connector goes to the child-anchor */
+.tf-child-anchor {
+    position: relative;
+}
+
+/* Override: when a branch contains a couple, adjust the vertical drop target */
+.tf-branch > .tf-tree > .tf-nc .tf-child-anchor::before {
+    content: '';
+    position: absolute;
+    top: -28px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 28px;
+    background: #4CAF50;
+    border-radius: 1px;
+    z-index: 0;
+}
+
+/* Hide default branch connector when couple has anchor */
+.tf-branch:has(.tf-child-anchor)::before {
+    display: none;
+}
+
+/* Fix: for the main vertical stem from parent down to children bracket */
+.tf-tree > .tf-children {
+    position: relative;
+}
+
+/* Single child - no horizontal bracket needed */
+.tf-children:has(.tf-branch:only-of-type)::after {
+    display: none;
+}
+
+/* Zoom controls */
+.tree-zoom-controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-left: 10px;
+}
+
+.zoom-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 2px solid var(--primary);
+    background: #fff;
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 1.1em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.zoom-btn:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+.zoom-level-display {
+    font-size: 0.82em;
+    font-weight: 600;
+    color: var(--text-muted);
+    min-width: 40px;
+    text-align: center;
+}
+
+/* Export dropdown */
+.export-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.export-dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    min-width: 170px;
+    z-index: 100;
+    padding: 6px;
+    margin-top: 4px;
+}
+
+.export-dropdown-content.show {
+    display: block;
+}
+
+.export-dropdown-content button {
+    width: 100%;
+    padding: 8px 14px;
+    background: none;
+    border: none;
+    font-family: 'Heebo', sans-serif;
+    font-size: 0.88em;
+    text-align: right;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+}
+
+.export-dropdown-content button:hover {
+    background: #F1F8E9;
+}
+
+/* ============================================
+   Remove old tree styles to avoid conflicts
+   ============================================ */
+.tree-family-unit,
+.tree-couple,
+.tree-person,
+.tree-vertical-line,
+.tree-horizontal-line,
+.tree-children,
+.tree-child-branch,
+.tree-child-connector,
+.tree-children-area,
+.family-group-separator:not(.tf-separator),
+.tree-svg-connectors,
+.tree-vertical-stem,
+.tree-child-drop,
+.couple-pair,
+.couple-member,
+.couple-connector:not(.tf-couple-link),
+.couple-line:not(.tf-couple-line),
+.couple-spacer {
+    /* Don't override - these classes are no longer generated */
 }
 
 ===== C:\Users\qadem\Downloads\Compressed\TREE\js\app.js =====
@@ -2798,6 +3544,10 @@ const Sharing = (() => {
 ===== C:\Users\qadem\Downloads\Compressed\TREE\js\tree-renderer.js =====
 const TreeRenderer = (() => {
     var lv = 3;
+    var currentZoom = 1;
+    var MIN_ZOOM = 0.2;
+    var MAX_ZOOM = 2;
+    var ZOOM_STEP = 0.15;
 
     function setLevel(n, el) {
         lv = n;
@@ -2817,48 +3567,110 @@ const TreeRenderer = (() => {
             o.textContent = m.firstName + ' ' + m.lastName;
             s.appendChild(o);
         });
-        if (cv && ms.find(function(m) { return m.id === cv; })) {
-            s.value = cv;
-        } else {
-            var first = ms.length ? ms[0].id : '';
-            s.value = first;
-        }
+        if (cv && ms.find(function(m) { return m.id === cv; })) s.value = cv;
+        else s.value = ms.length ? ms[0].id : '';
     }
 
     function getPersonEmoji(gender, birthDate, deathDate) {
         var age = App.calculateAge(birthDate, deathDate);
         if (age === null) return gender === 'male' ? 'ðŸ‘¨' : 'ðŸ‘©';
         if (gender === 'male') {
-            if (age < 4) return 'ðŸ‘¶';
-            if (age < 13) return 'ðŸ‘¦';
-            if (age < 60) return 'ðŸ‘¨';
-            return 'ðŸ‘´';
+            if (age < 4) return 'ðŸ‘¶'; if (age < 13) return 'ðŸ‘¦'; if (age < 60) return 'ðŸ‘¨'; return 'ðŸ‘´';
         } else {
-            if (age < 4) return 'ðŸ‘¶';
-            if (age < 13) return 'ðŸ‘§';
-            if (age < 60) return 'ðŸ‘©';
-            return 'ðŸ‘µ';
+            if (age < 4) return 'ðŸ‘¶'; if (age < 13) return 'ðŸ‘§'; if (age < 60) return 'ðŸ‘©'; return 'ðŸ‘µ';
         }
     }
 
     function formatBirthDate(dateStr) {
         if (!dateStr) return '';
         var p = dateStr.split('/');
-        if (p.length !== 3) return dateStr;
-        return p[0] + '.' + p[1] + '.' + p[2];
+        return p.length !== 3 ? dateStr : p[0] + '.' + p[1] + '.' + p[2];
     }
 
-    // Check if a person is a child of any of the given parent IDs
     function isChildOf(person, parentIds) {
         if (!person) return false;
         for (var i = 0; i < parentIds.length; i++) {
-            if (person.parentId === parentIds[i] || person.parentId2 === parentIds[i]) {
-                return true;
-            }
+            if (person.parentId === parentIds[i] || person.parentId2 === parentIds[i]) return true;
         }
         return false;
     }
 
+    // Zoom
+    function zoomIn() { currentZoom = Math.min(MAX_ZOOM, currentZoom + ZOOM_STEP); applyZoom(); }
+    function zoomOut() { currentZoom = Math.max(MIN_ZOOM, currentZoom - ZOOM_STEP); applyZoom(); }
+    function zoomReset() { currentZoom = 1; applyZoom(); }
+    function zoomFit() {
+        var c = document.getElementById('treeContainer'), w = document.getElementById('treeWrapper');
+        if (!c || !w) return;
+        currentZoom = 1; w.style.transform = 'scale(1)';
+        requestAnimationFrame(function() {
+            var cW = c.clientWidth - 40, cH = c.clientHeight - 40;
+            var wW = w.scrollWidth, wH = w.scrollHeight;
+            if (!wW || !wH) return;
+            currentZoom = Math.max(MIN_ZOOM, Math.min(cW / wW, cH / wH, 1));
+            applyZoom();
+        });
+    }
+    function applyZoom() {
+        var w = document.getElementById('treeWrapper');
+        var d = document.getElementById('zoomLevelDisplay');
+        if (w) { w.style.transform = 'scale(' + currentZoom + ')'; w.style.transformOrigin = 'top center'; }
+        if (d) d.textContent = Math.round(currentZoom * 100) + '%';
+    }
+
+    // Export
+    function toggleExportMenu() {
+        var m = document.getElementById('exportDropdownContent');
+        if (m) { m.classList.toggle('show'); if (m.classList.contains('show')) setTimeout(function() { document.addEventListener('click', function cl(e) { if (!e.target.closest('.export-dropdown')) { m.classList.remove('show'); document.removeEventListener('click', cl); } }); }, 10); }
+    }
+    function loadLib(url, cb) {
+        if (url.indexOf('html2canvas') >= 0 && typeof html2canvas !== 'undefined') { cb(); return; }
+        if (url.indexOf('jspdf') >= 0 && typeof jspdf !== 'undefined') { cb(); return; }
+        var s = document.createElement('script'); s.src = url; s.onload = cb; document.head.appendChild(s);
+    }
+    function exportAsImage() {
+        var m = document.getElementById('exportDropdownContent'); if (m) m.classList.remove('show');
+        var w = document.getElementById('treeWrapper'); if (!w) return;
+        App.showToast('×ž×›×™×Ÿ ×ª×ž×•× ×”...', 'warning');
+        var sz = currentZoom; w.style.transform = 'scale(1)';
+        requestAnimationFrame(function() { fixBrackets(); requestAnimationFrame(function() {
+            loadLib('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function() {
+                html2canvas(w, { backgroundColor:'#FAFFF5', scale:2, useCORS:true, logging:false,
+                    width:w.scrollWidth, height:w.scrollHeight, scrollX:0, scrollY:0, x:0, y:0
+                }).then(function(canvas) {
+                    var a = document.createElement('a'); a.download='family-tree.png'; a.href=canvas.toDataURL('image/png'); a.click();
+                    App.showToast('×”×ª×ž×•× ×” ×”×•×¨×“×”! ðŸ–¼ï¸'); currentZoom=sz; applyZoom();
+                }).catch(function(err) { console.error(err); App.showToast('×©×’×™××”','error'); currentZoom=sz; applyZoom(); });
+            });
+        }); });
+    }
+    function exportAsPDF() {
+        var m = document.getElementById('exportDropdownContent'); if (m) m.classList.remove('show');
+        var w = document.getElementById('treeWrapper'); if (!w) return;
+        App.showToast('×ž×›×™×Ÿ PDF...', 'warning');
+        var sz = currentZoom; w.style.transform = 'scale(1)';
+        requestAnimationFrame(function() { fixBrackets(); requestAnimationFrame(function() {
+            loadLib('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function() {
+                loadLib('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', function() {
+                    html2canvas(w, { backgroundColor:'#FAFFF5', scale:2, useCORS:true, logging:false,
+                        width:w.scrollWidth, height:w.scrollHeight, scrollX:0, scrollY:0, x:0, y:0
+                    }).then(function(canvas) {
+                        var img=canvas.toDataURL('image/png');
+                        var o=canvas.width>canvas.height?'landscape':'portrait';
+                        var pdf=new jspdf.jsPDF({orientation:o,unit:'mm',format:'a4'});
+                        var pW=pdf.internal.pageSize.getWidth()-20, pH=pdf.internal.pageSize.getHeight()-20;
+                        var r=Math.min(pW/canvas.width,pH/canvas.height);
+                        pdf.addImage(img,'PNG',10+(pW-canvas.width*r)/2,10+(pH-canvas.height*r)/2,canvas.width*r,canvas.height*r);
+                        pdf.save('family-tree.pdf'); App.showToast('PDF ×”×•×¨×“! ðŸ“„'); currentZoom=sz; applyZoom();
+                    }).catch(function(err) { console.error(err); App.showToast('×©×’×™××”','error'); currentZoom=sz; applyZoom(); });
+                });
+            });
+        }); });
+    }
+
+    // =============================================
+    // RENDER
+    // =============================================
     function render() {
         var w = document.getElementById('treeWrapper');
         if (!w) return;
@@ -2868,22 +3680,18 @@ const TreeRenderer = (() => {
         var ms = App.getMembers();
 
         if (!rid || !ms.length) {
-            w.innerHTML = '<div class="empty-state"><div class="icon">ðŸŒ´</div><h3>×‘×—×¨×• ×©×•×¨×© ×œ×¢×¥</h3><p>×”×•×¡×™×¤×• ×‘× ×™ ×ž×©×¤×—×” ×•×‘×—×¨×• ×ž×™ ×™×”×™×” ×‘×¨××© ×”×¢×¥</p></div>';
+            w.innerHTML = '<div class="empty-state"><div class="icon">ðŸŒ´</div><h3>×‘×—×¨×• ×©×•×¨×© ×œ×¢×¥</h3></div>';
             return;
         }
-
         var root = ms.find(function(m) { return m.id === rid; });
         if (!root) return;
-
         var vis = {};
 
-        // parentIds = IDs of the parents above this person
         function build(person, level, parentIds) {
             if (!person || level > lv || vis[person.id]) return '';
             vis[person.id] = true;
             if (person.status === 'deceased' && !sdc) return '';
 
-            // Find spouses
             var spouses = [];
             ms.forEach(function(m) {
                 if (vis[m.id]) return;
@@ -2895,11 +3703,9 @@ const TreeRenderer = (() => {
                 }
             });
 
-            // All parent IDs for finding children
             var allParentIds = [person.id];
             spouses.forEach(function(sp) { allParentIds.push(sp.member.id); });
 
-            // Find children
             var children = ms.filter(function(c) {
                 if (vis[c.id]) return false;
                 if (c.status === 'deceased' && !sdc) return false;
@@ -2907,56 +3713,49 @@ const TreeRenderer = (() => {
                        (c.parentId2 && allParentIds.indexOf(c.parentId2) !== -1);
             });
 
-            // Group children by which spouse pair they belong to
+            // Group children by spouse pair
             var childGroups = [];
-
-            // Children of person + each spouse
             spouses.forEach(function(sp) {
-                var spouseChildren = children.filter(function(c) {
-                    var parentPair = [person.id, sp.member.id];
-                    return (parentPair.indexOf(c.parentId) !== -1 && parentPair.indexOf(c.parentId2) !== -1) ||
-                           (parentPair.indexOf(c.parentId) !== -1 && !c.parentId2) ||
-                           (parentPair.indexOf(c.parentId2) !== -1 && !c.parentId);
+                var spCh = children.filter(function(c) {
+                    var pp = [person.id, sp.member.id];
+                    return (pp.indexOf(c.parentId) !== -1 && pp.indexOf(c.parentId2) !== -1) ||
+                           (pp.indexOf(c.parentId) !== -1 && !c.parentId2) ||
+                           (pp.indexOf(c.parentId2) !== -1 && !c.parentId);
                 });
-                if (spouseChildren.length > 0) {
-                    childGroups.push({ spouse: sp, children: spouseChildren });
-                }
+                if (spCh.length > 0) childGroups.push({ children: spCh });
             });
+            var assigned = {};
+            childGroups.forEach(function(g) { g.children.forEach(function(c) { assigned[c.id] = true; }); });
+            var solo = children.filter(function(c) { return !assigned[c.id]; });
 
-            // Children with only person as parent (no spouse match)
-            var assignedChildren = [];
+            var allCh = [];
+            var gIdx = 0;
             childGroups.forEach(function(g) {
-                g.children.forEach(function(c) { assignedChildren.push(c.id); });
+                g.children.forEach(function(c) { allCh.push({ child: c, group: gIdx }); });
+                gIdx++;
             });
-            var soloChildren = children.filter(function(c) {
-                return assignedChildren.indexOf(c.id) === -1;
-            });
+            solo.forEach(function(c) { allCh.push({ child: c, group: gIdx }); });
 
-            // Build HTML
-            var h = '<div class="tree-family-unit">';
-
-            // Build couple display
+            // Build the tree node
+            var h = '<div class="tf-tree">';
+            h += '<div class="tf-nc">';
             h += buildCouple(person, spouses, parentIds);
+            h += '</div>';
 
-            // Children section
-            var hasChildren = childGroups.length > 0 || soloChildren.length > 0;
-            if (hasChildren && level < lv) {
-                h += '<div class="tree-vertical-line"></div>';
-
-                // All children in one container
-                var allChildrenToBuild = [];
-                childGroups.forEach(function(g) {
-                    g.children.forEach(function(c) { allChildrenToBuild.push(c); });
-                });
-                soloChildren.forEach(function(c) { allChildrenToBuild.push(c); });
-
-                h += '<div class="tree-children' + (allChildrenToBuild.length > 1 ? ' multiple' : '') + '">';
-                allChildrenToBuild.forEach(function(c) {
-                    if (!vis[c.id]) {
-                        h += '<div class="tree-child-branch">';
-                        h += '<div class="tree-child-connector"></div>';
-                        h += build(c, level + 1, allParentIds);
+            if (allCh.length > 0 && level < lv) {
+                var childCount = 0;
+                h += '<div class="tf-children">';
+                var prevGroup = -1;
+                allCh.forEach(function(entry) {
+                    if (prevGroup !== -1 && entry.group !== prevGroup) {
+                        h += '<div class="tf-separator"></div>';
+                    }
+                    prevGroup = entry.group;
+                    if (!vis[entry.child.id]) {
+                        h += '<div class="tf-branch">';
+                        h += build(entry.child, level + 1, allParentIds);
                         h += '</div>';
+                        childCount++;
                     }
                 });
                 h += '</div>';
@@ -2966,82 +3765,37 @@ const TreeRenderer = (() => {
             return h;
         }
 
-        // Build the couple display with correct positioning
-        // The child (person connected to parents above) is the anchor point
-        // Spouse is positioned to the side
         function buildCouple(person, spouses, parentIds) {
-            var h = '<div class="tree-couple">';
-
+            var h = '';
             if (spouses.length === 0) {
-                // Single person, no spouse
-                h += nodeHTML(person, true);
+                h += nodeHTML(person);
             } else {
-                // Person + spouse(s)
-                // Determine order: male on right, female on left
-                // The person who is the CHILD (connected to parents above)
-                // should be the anchor
-                var isPersonChild = parentIds && parentIds.length > 0 &&
-                    isChildOf(person, parentIds);
-
+                var isPC = parentIds && parentIds.length > 0 && isChildOf(person, parentIds);
                 spouses.forEach(function(sp, idx) {
                     vis[sp.member.id] = true;
-
-                    var leftPerson, rightPerson, leftIsChild, rightIsChild;
-
-                    // Option G: male right, female left
+                    var lp, rp, lc, rc;
                     if (person.gender === 'male') {
-                        // Person (male) on right, spouse (female) on left
-                        leftPerson = sp.member;
-                        rightPerson = person;
-                        leftIsChild = !isPersonChild;
-                        rightIsChild = isPersonChild;
+                        lp = sp.member; rp = person; lc = false; rc = isPC;
                     } else {
-                        // Person (female) on left, spouse (male) on right
-                        leftPerson = person;
-                        rightPerson = sp.member;
-                        leftIsChild = isPersonChild;
-                        rightIsChild = !isPersonChild;
+                        lp = person; rp = sp.member; lc = isPC; rc = false;
                     }
+                    var isSC = parentIds && parentIds.length > 0 && isChildOf(sp.member, parentIds);
+                    if (isSC) { lc = (lp.id === sp.member.id); rc = (rp.id === sp.member.id); }
+                    if (!isSC && isPC) { lc = (lp.id === person.id); rc = (rp.id === person.id); }
 
-                    // If spouse is actually the child of parents above
-                    var isSpouseChild = parentIds && parentIds.length > 0 &&
-                        isChildOf(sp.member, parentIds);
-                    if (isSpouseChild) {
-                        leftIsChild = (leftPerson.id === sp.member.id);
-                        rightIsChild = (rightPerson.id === sp.member.id);
-                    }
-
-                    if (idx > 0) {
-                        h += '<div class="couple-spacer"></div>';
-                    }
-
-                    h += '<div class="couple-pair">';
-
-                    // Left person
-                    h += '<div class="couple-member' + (leftIsChild ? ' is-child-anchor' : '') + '">';
-                    h += nodeHTML(leftPerson, false);
-                    h += '</div>';
-
-                    // Connector
-                    h += '<div class="couple-connector">';
-                    h += '<div class="couple-line ' + (sp.isEx ? 'ex-line' : 'married-line') + '"></div>';
-                    h += '<span class="couple-symbol">' + (sp.isEx ? 'ðŸ’”' : 'â¤ï¸') + '</span>';
-                    h += '</div>';
-
-                    // Right person
-                    h += '<div class="couple-member' + (rightIsChild ? ' is-child-anchor' : '') + '">';
-                    h += nodeHTML(rightPerson, false);
-                    h += '</div>';
-
+                    if (idx > 0) h += '<div style="width:10px"></div>';
+                    h += '<div class="tf-couple">';
+                    h += '<div class="tf-couple-member' + (lc ? ' tf-child-anchor' : '') + '">' + nodeHTML(lp) + '</div>';
+                    h += '<div class="tf-couple-link"><div class="tf-couple-line' + (sp.isEx ? ' tf-ex' : '') + '"></div>';
+                    h += '<span class="tf-couple-heart">' + (sp.isEx ? 'ðŸ’”' : 'â¤ï¸') + '</span></div>';
+                    h += '<div class="tf-couple-member' + (rc ? ' tf-child-anchor' : '') + '">' + nodeHTML(rp) + '</div>';
                     h += '</div>';
                 });
             }
-
-            h += '</div>';
             return h;
         }
 
-        function nodeHTML(p, isSingle) {
+        function nodeHTML(p) {
             var age = App.calculateAge(p.birthDate, p.deathDate);
             var gc = p.gender === 'male' ? 'male' : 'female';
             if (p.status === 'deceased') gc += ' deceased';
@@ -3049,34 +3803,29 @@ const TreeRenderer = (() => {
             var cm = (typeof DragConnect !== 'undefined' && DragConnect.isActive) ? DragConnect.isActive() : false;
             var emoji = getPersonEmoji(p.gender, p.birthDate, p.deathDate);
 
-            var html = '<div class="tree-person ' + gc + (cm ? ' connectable' : '') + (isSingle ? ' single' : '') + '" data-member-id="' + p.id + '" '
+            var html = '<div class="tf-person ' + gc + (cm ? ' connectable' : '') + '" data-member-id="' + p.id + '" '
                 + (cm ? '' : 'onclick="App.viewMember(\'' + p.id + '\')"') + '>';
-
-            html += '<div class="tree-person-photo">';
-            if (p.photo) {
-                html += '<img src="' + p.photo + '">';
-            } else {
-                html += '<div class="tree-person-emoji" style="background:' + bg + '">' + emoji + '</div>';
-            }
+            html += '<div class="tf-photo">';
+            html += p.photo ? '<img src="' + p.photo + '">' : '<div class="tf-emoji" style="background:' + bg + '">' + emoji + '</div>';
             html += '</div>';
-
-            html += '<div class="tree-person-name">' + p.firstName + ' ' + p.lastName + '</div>';
-
-            if (p.birthDate) {
-                html += '<div class="tree-person-date">' + formatBirthDate(p.birthDate) + '</div>';
-            }
-
-            if (age !== null) {
-                html += '<div class="tree-person-age">' + (p.status === 'deceased' ? 'ðŸ•¯ï¸ ' : '') + '×’×™×œ ' + age + '</div>';
-            } else if (p.status === 'deceased') {
-                html += '<div class="tree-person-age">ðŸ•¯ï¸</div>';
-            }
-
+            html += '<div class="tf-name">' + p.firstName + ' ' + p.lastName + '</div>';
+            if (p.birthDate) html += '<div class="tf-date">' + formatBirthDate(p.birthDate) + '</div>';
+            if (age !== null) html += '<div class="tf-age">' + (p.status === 'deceased' ? 'ðŸ•¯ï¸ ' : '') + '×’×™×œ ' + age + '</div>';
+            else if (p.status === 'deceased') html += '<div class="tf-age">ðŸ•¯ï¸</div>';
             html += '</div>';
             return html;
         }
 
         w.innerHTML = build(root, 1, []);
+
+        // Fix brackets after layout
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+                fixBrackets();
+            });
+        });
+
+        applyZoom();
 
         if (typeof DragConnect !== 'undefined' && DragConnect.isActive && DragConnect.isActive()) {
             DragConnect.toggleMode();
@@ -3084,7 +3833,76 @@ const TreeRenderer = (() => {
         }
     }
 
-    return { setLevel: setLevel, populateRootSelect: populateRootSelect, render: render };
+    // =============================================
+    // FIX BRACKET POSITIONS (CSS custom properties)
+    // =============================================
+    function fixBrackets() {
+        var allChildren = document.querySelectorAll('.tf-children');
+        allChildren.forEach(function(container) {
+            var branches = [];
+            for (var i = 0; i < container.children.length; i++) {
+                if (container.children[i].classList.contains('tf-branch')) {
+                    branches.push(container.children[i]);
+                }
+            }
+
+            if (branches.length <= 1) {
+                container.style.setProperty('--bracket-left', '50%');
+                container.style.setProperty('--bracket-right', '50%');
+                return;
+            }
+
+            var containerRect = container.getBoundingClientRect();
+
+            // Find anchor center for first and last branch
+            function getAnchorCenter(branch) {
+                var anchor = branch.querySelector('.tf-child-anchor');
+                if (anchor) {
+                    var person = anchor.querySelector('.tf-person');
+                    var el = person || anchor;
+                    var r = el.getBoundingClientRect();
+                    return r.left + r.width / 2;
+                }
+                // No couple - single person
+                var person = branch.querySelector(':scope > .tf-tree > .tf-nc > .tf-person');
+                if (!person) person = branch.querySelector('.tf-person');
+                if (person) {
+                    var r = person.getBoundingClientRect();
+                    return r.left + r.width / 2;
+                }
+                var r = branch.getBoundingClientRect();
+                return r.left + r.width / 2;
+            }
+
+            var firstCenter = getAnchorCenter(branches[0]) - containerRect.left;
+            var lastCenter = getAnchorCenter(branches[branches.length - 1]) - containerRect.left;
+            var cw = containerRect.width;
+
+            container.style.setProperty('--bracket-left', Math.max(0, firstCenter) + 'px');
+            container.style.setProperty('--bracket-right', Math.max(0, cw - lastCenter) + 'px');
+        });
+    }
+
+    // Resize handler
+    var _rt;
+    window.addEventListener('resize', function() {
+        clearTimeout(_rt);
+        _rt = setTimeout(fixBrackets, 250);
+    });
+
+    // Ctrl+Wheel zoom
+    document.addEventListener('DOMContentLoaded', function() {
+        var c = document.getElementById('treeContainer');
+        if (c) c.addEventListener('wheel', function(e) {
+            if (e.ctrlKey || e.metaKey) { e.preventDefault(); e.deltaY < 0 ? zoomIn() : zoomOut(); }
+        }, { passive: false });
+    });
+
+    return {
+        setLevel: setLevel, populateRootSelect: populateRootSelect, render: render,
+        zoomIn: zoomIn, zoomOut: zoomOut, zoomReset: zoomReset, zoomFit: zoomFit,
+        exportAsImage: exportAsImage, exportAsPDF: exportAsPDF, toggleExportMenu: toggleExportMenu
+    };
 })();
 
 ===== C:\Users\qadem\Downloads\Compressed\TREE\404.html =====
@@ -4230,7 +5048,15 @@ style="text-transform:uppercase;text-align:center;font-size:1.4em;letter-spacing
 
 <!-- Tree -->
 <div id="page-tree" class="page">
-<div class="card tree-page-card"><div class="card-header"><div class="card-title">ðŸŒ´ ×¢×¥</div></div>
+<div class="card tree-page-card"><div class="card-header"><div class="card-title">ðŸŒ´ ×¢×¥</div>
+<div class="export-dropdown">
+    <button class="btn btn-outline btn-sm" onclick="TreeRenderer.toggleExportMenu()">ðŸ“¤ ×™×™×¦×•×</button>
+    <div class="export-dropdown-content" id="exportDropdownContent">
+        <button onclick="TreeRenderer.exportAsImage()">ðŸ–¼ï¸ ×ª×ž×•× ×” (PNG)</button>
+        <button onclick="TreeRenderer.exportAsPDF()">ðŸ“„ PDF</button>
+    </div>
+</div>
+</div>
 <div class="tree-toolbar">
 <div class="toolbar-group"><label>×©×•×¨×©:</label><select class="form-select compact" id="treeRoot" onchange="TreeRenderer.render()"></select></div>
 <div class="toolbar-group"><label>×¨×ž×•×ª:</label><div class="level-buttons">
@@ -4243,6 +5069,14 @@ style="text-transform:uppercase;text-align:center;font-size:1.4em;letter-spacing
 </div></div>
 <label class="checkbox-label"><input type="checkbox" id="showDivorced" checked onchange="TreeRenderer.render()"> ðŸ’”</label>
 <label class="checkbox-label"><input type="checkbox" id="showDeceased" checked onchange="TreeRenderer.render()"> ðŸ•¯ï¸</label>
+<div class="toolbar-divider"></div>
+<div class="tree-zoom-controls">
+    <button class="zoom-btn" onclick="TreeRenderer.zoomOut()" title="×”×§×˜× ×”">âˆ’</button>
+    <span class="zoom-level-display" id="zoomLevelDisplay">100%</span>
+    <button class="zoom-btn" onclick="TreeRenderer.zoomIn()" title="×”×’×“×œ×”">+</button>
+    <button class="zoom-btn" onclick="TreeRenderer.zoomReset()" title="××™×¤×•×¡">â†º</button>
+    <button class="zoom-btn" onclick="TreeRenderer.zoomFit()" title="×”×ª×× ×œ×—×œ×•×Ÿ" style="font-size:0.8em">âŠž</button>
+</div>
 <div class="toolbar-divider"></div>
 <button class="btn btn-outline btn-sm" id="connectModeBtn" onclick="DragConnect.toggleMode()">ðŸ”— ×§×™×©×•×¨</button>
 </div>

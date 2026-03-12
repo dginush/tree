@@ -4,11 +4,18 @@ const TreeRenderer = (() => {
     var MIN_ZOOM = 0.2;
     var MAX_ZOOM = 2;
     var ZOOM_STEP = 0.15;
-    var R = 10; // Rounded corner radius
+
+    // Connector config
+    var LINE_COLOR = '#4CAF50';
+    var LINE_WIDTH = 2;
+    var V_GAP = 30;       // vertical gap between parent bottom and children top
+    var CORNER_R = 8;     // corner radius
+    var H_PAD = 10;       // horizontal padding per branch
+    var GROUP_GAP = 35;   // gap between family groups
 
     function setLevel(n, el) {
         lv = n;
-        document.querySelectorAll('.level-btn').forEach(function(b) { b.classList.remove('active'); });
+        document.querySelectorAll('.level-btn').forEach(function (b) { b.classList.remove('active'); });
         if (el) el.classList.add('active');
         render();
     }
@@ -18,40 +25,30 @@ const TreeRenderer = (() => {
         if (!s) return;
         var ms = App.getMembers(), cv = s.value;
         s.innerHTML = '<option value="">-- בחרו שורש --</option>';
-        ms.forEach(function(m) {
+        ms.forEach(function (m) {
             var o = document.createElement('option');
             o.value = m.id;
             o.textContent = m.firstName + ' ' + m.lastName;
             s.appendChild(o);
         });
-        if (cv && ms.find(function(m) { return m.id === cv; })) {
-            s.value = cv;
-        } else {
-            s.value = ms.length ? ms[0].id : '';
-        }
+        if (cv && ms.find(function (m) { return m.id === cv; })) s.value = cv;
+        else s.value = ms.length ? ms[0].id : '';
     }
 
     function getPersonEmoji(gender, birthDate, deathDate) {
         var age = App.calculateAge(birthDate, deathDate);
         if (age === null) return gender === 'male' ? '👨' : '👩';
         if (gender === 'male') {
-            if (age < 4) return '👶';
-            if (age < 13) return '👦';
-            if (age < 60) return '👨';
-            return '👴';
+            if (age < 4) return '👶'; if (age < 13) return '👦'; if (age < 60) return '👨'; return '👴';
         } else {
-            if (age < 4) return '👶';
-            if (age < 13) return '👧';
-            if (age < 60) return '👩';
-            return '👵';
+            if (age < 4) return '👶'; if (age < 13) return '👧'; if (age < 60) return '👩'; return '👵';
         }
     }
 
     function formatBirthDate(dateStr) {
         if (!dateStr) return '';
         var p = dateStr.split('/');
-        if (p.length !== 3) return dateStr;
-        return p[0] + '.' + p[1] + '.' + p[2];
+        return p.length !== 3 ? dateStr : p[0] + '.' + p[1] + '.' + p[2];
     }
 
     function isChildOf(person, parentIds) {
@@ -70,7 +67,7 @@ const TreeRenderer = (() => {
         var c = document.getElementById('treeContainer'), w = document.getElementById('treeWrapper');
         if (!c || !w) return;
         currentZoom = 1; w.style.transform = 'scale(1)';
-        requestAnimationFrame(function() {
+        requestAnimationFrame(function () {
             var cW = c.clientWidth - 40, cH = c.clientHeight - 40;
             var wW = w.scrollWidth, wH = w.scrollHeight;
             if (!wW || !wH) return;
@@ -88,47 +85,72 @@ const TreeRenderer = (() => {
     // Export
     function toggleExportMenu() {
         var m = document.getElementById('exportDropdownContent');
-        if (m) { m.classList.toggle('show'); if (m.classList.contains('show')) setTimeout(function() { document.addEventListener('click', function cl(e) { if (!e.target.closest('.export-dropdown')) { m.classList.remove('show'); document.removeEventListener('click', cl); } }); }, 10); }
+        if (m) {
+            m.classList.toggle('show');
+            if (m.classList.contains('show')) {
+                setTimeout(function () {
+                    document.addEventListener('click', function cl(e) {
+                        if (!e.target.closest('.export-dropdown')) { m.classList.remove('show'); document.removeEventListener('click', cl); }
+                    });
+                }, 10);
+            }
+        }
     }
-    function loadLib(url, cb) { if (url.indexOf('html2canvas') >= 0 && typeof html2canvas !== 'undefined') { cb(); return; } if (url.indexOf('jspdf') >= 0 && typeof jspdf !== 'undefined') { cb(); return; } var s = document.createElement('script'); s.src = url; s.onload = cb; document.head.appendChild(s); }
+    function loadLib(url, cb) {
+        if (url.indexOf('html2canvas') >= 0 && typeof html2canvas !== 'undefined') { cb(); return; }
+        if (url.indexOf('jspdf') >= 0 && typeof jspdf !== 'undefined') { cb(); return; }
+        var s = document.createElement('script'); s.src = url; s.onload = cb; document.head.appendChild(s);
+    }
     function exportAsImage() {
         var m = document.getElementById('exportDropdownContent'); if (m) m.classList.remove('show');
         var w = document.getElementById('treeWrapper'); if (!w) return;
         App.showToast('מכין תמונה...', 'warning');
         var sz = currentZoom; w.style.transform = 'scale(1)';
-        // Need to redraw connectors at scale 1
-        requestAnimationFrame(function() { drawAllConnectors(); requestAnimationFrame(function() {
-        loadLib('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function() {
-            html2canvas(w, { backgroundColor: '#FAFFF5', scale: 2, useCORS: true }).then(function(canvas) {
-                var a = document.createElement('a'); a.download = 'family-tree.png'; a.href = canvas.toDataURL('image/png'); a.click();
-                App.showToast('התמונה הורדה! 🖼️'); currentZoom = sz; applyZoom(); drawAllConnectors();
-            }).catch(function() { App.showToast('שגיאה', 'error'); currentZoom = sz; applyZoom(); drawAllConnectors(); });
-        }); }); });
+        requestAnimationFrame(function () {
+            drawAllConnectors();
+            requestAnimationFrame(function () {
+                loadLib('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function () {
+                    html2canvas(w, {
+                        backgroundColor: '#FAFFF5', scale: 2, useCORS: true, logging: false,
+                        width: w.scrollWidth, height: w.scrollHeight
+                    }).then(function (canvas) {
+                        var a = document.createElement('a'); a.download = 'family-tree.png'; a.href = canvas.toDataURL('image/png'); a.click();
+                        App.showToast('התמונה הורדה! 🖼️'); currentZoom = sz; applyZoom();
+                    }).catch(function (err) { console.error(err); App.showToast('שגיאה', 'error'); currentZoom = sz; applyZoom(); });
+                });
+            });
+        });
     }
     function exportAsPDF() {
         var m = document.getElementById('exportDropdownContent'); if (m) m.classList.remove('show');
         var w = document.getElementById('treeWrapper'); if (!w) return;
         App.showToast('מכין PDF...', 'warning');
         var sz = currentZoom; w.style.transform = 'scale(1)';
-        requestAnimationFrame(function() { drawAllConnectors(); requestAnimationFrame(function() {
-        loadLib('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function() {
-            loadLib('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', function() {
-                html2canvas(w, { backgroundColor: '#FAFFF5', scale: 2, useCORS: true }).then(function(canvas) {
-                    var img = canvas.toDataURL('image/png');
-                    var o = canvas.width > canvas.height ? 'landscape' : 'portrait';
-                    var pdf = new jspdf.jsPDF({ orientation: o, unit: 'mm', format: 'a4' });
-                    var pW = pdf.internal.pageSize.getWidth() - 20, pH = pdf.internal.pageSize.getHeight() - 20;
-                    var r = Math.min(pW / canvas.width, pH / canvas.height);
-                    pdf.addImage(img, 'PNG', 10 + (pW - canvas.width * r) / 2, 10 + (pH - canvas.height * r) / 2, canvas.width * r, canvas.height * r);
-                    pdf.save('family-tree.pdf'); App.showToast('PDF הורד! 📄');
-                    currentZoom = sz; applyZoom(); drawAllConnectors();
-                }).catch(function() { App.showToast('שגיאה', 'error'); currentZoom = sz; applyZoom(); drawAllConnectors(); });
+        requestAnimationFrame(function () {
+            drawAllConnectors();
+            requestAnimationFrame(function () {
+                loadLib('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function () {
+                    loadLib('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', function () {
+                        html2canvas(w, {
+                            backgroundColor: '#FAFFF5', scale: 2, useCORS: true, logging: false,
+                            width: w.scrollWidth, height: w.scrollHeight
+                        }).then(function (canvas) {
+                            var img = canvas.toDataURL('image/png');
+                            var o = canvas.width > canvas.height ? 'landscape' : 'portrait';
+                            var pdf = new jspdf.jsPDF({ orientation: o, unit: 'mm', format: 'a4' });
+                            var pW = pdf.internal.pageSize.getWidth() - 20, pH = pdf.internal.pageSize.getHeight() - 20;
+                            var r = Math.min(pW / canvas.width, pH / canvas.height);
+                            pdf.addImage(img, 'PNG', 10 + (pW - canvas.width * r) / 2, 10 + (pH - canvas.height * r) / 2, canvas.width * r, canvas.height * r);
+                            pdf.save('family-tree.pdf'); App.showToast('PDF הורד! 📄'); currentZoom = sz; applyZoom();
+                        }).catch(function (err) { console.error(err); App.showToast('שגיאה', 'error'); currentZoom = sz; applyZoom(); });
+                    });
+                });
             });
-        }); }); });
+        });
     }
 
     // =============================================
-    // RENDER
+    // RENDER - Build HTML structure
     // =============================================
     function render() {
         var w = document.getElementById('treeWrapper');
@@ -142,8 +164,7 @@ const TreeRenderer = (() => {
             w.innerHTML = '<div class="empty-state"><div class="icon">🌴</div><h3>בחרו שורש לעץ</h3></div>';
             return;
         }
-
-        var root = ms.find(function(m) { return m.id === rid; });
+        var root = ms.find(function (m) { return m.id === rid; });
         if (!root) return;
         var vis = {};
 
@@ -153,7 +174,7 @@ const TreeRenderer = (() => {
             if (person.status === 'deceased' && !sdc) return '';
 
             var spouses = [];
-            ms.forEach(function(m) {
+            ms.forEach(function (m) {
                 if (vis[m.id]) return;
                 if (m.spouseId === person.id || person.spouseId === m.id) {
                     var ex = m.isExSpouse || m.relationType === 'ex-spouse';
@@ -164,49 +185,59 @@ const TreeRenderer = (() => {
             });
 
             var allParentIds = [person.id];
-            spouses.forEach(function(sp) { allParentIds.push(sp.member.id); });
+            spouses.forEach(function (sp) { allParentIds.push(sp.member.id); });
 
-            var children = ms.filter(function(c) {
+            var children = ms.filter(function (c) {
                 if (vis[c.id]) return false;
                 if (c.status === 'deceased' && !sdc) return false;
                 return allParentIds.indexOf(c.parentId) !== -1 ||
-                       (c.parentId2 && allParentIds.indexOf(c.parentId2) !== -1);
+                    (c.parentId2 && allParentIds.indexOf(c.parentId2) !== -1);
             });
 
             var childGroups = [];
-            spouses.forEach(function(sp) {
-                var spCh = children.filter(function(c) {
+            spouses.forEach(function (sp) {
+                var spCh = children.filter(function (c) {
                     var pp = [person.id, sp.member.id];
                     return (pp.indexOf(c.parentId) !== -1 && pp.indexOf(c.parentId2) !== -1) ||
-                           (pp.indexOf(c.parentId) !== -1 && !c.parentId2) ||
-                           (pp.indexOf(c.parentId2) !== -1 && !c.parentId);
+                        (pp.indexOf(c.parentId) !== -1 && !c.parentId2) ||
+                        (pp.indexOf(c.parentId2) !== -1 && !c.parentId);
                 });
                 if (spCh.length > 0) childGroups.push({ children: spCh });
             });
             var assigned = {};
-            childGroups.forEach(function(g) { g.children.forEach(function(c) { assigned[c.id] = true; }); });
-            var solo = children.filter(function(c) { return !assigned[c.id]; });
-
-            var h = '<div class="tree-family-unit" data-person-id="' + person.id + '">';
-            h += buildCouple(person, spouses, parentIds);
+            childGroups.forEach(function (g) { g.children.forEach(function (c) { assigned[c.id] = true; }); });
+            var solo = children.filter(function (c) { return !assigned[c.id]; });
 
             var allCh = [];
-            childGroups.forEach(function(g, gi) {
-                g.children.forEach(function(c) { allCh.push({ child: c, group: gi }); });
+            var gIdx = 0;
+            childGroups.forEach(function (g) {
+                g.children.forEach(function (c) { allCh.push({ child: c, group: gIdx }); });
+                gIdx++;
             });
-            var lastGroup = childGroups.length - 1;
-            solo.forEach(function(c) { allCh.push({ child: c, group: lastGroup + 1 }); });
+            solo.forEach(function (c) { allCh.push({ child: c, group: gIdx }); });
 
+            var h = '<div class="tf-tree">';
+
+            // Node content (couple or single person)
+            h += '<div class="tf-nc">';
+            h += buildCouple(person, spouses, parentIds);
+            h += '</div>';
+
+            // Children
             if (allCh.length > 0 && level < lv) {
-                h += '<div class="tree-children-area">';
+                // Connector area - this DIV will be sized by JS to hold the lines
+                h += '<div class="tf-connector-area" data-children-count="' + allCh.length + '"></div>';
+
+                // Children row
+                h += '<div class="tf-children-row">';
                 var prevGroup = -1;
-                allCh.forEach(function(entry) {
+                allCh.forEach(function (entry) {
                     if (prevGroup !== -1 && entry.group !== prevGroup) {
-                        h += '<div class="family-group-separator"></div>';
+                        h += '<div class="tf-group-gap"></div>';
                     }
                     prevGroup = entry.group;
                     if (!vis[entry.child.id]) {
-                        h += '<div class="tree-child-branch">';
+                        h += '<div class="tf-branch">';
                         h += build(entry.child, level + 1, allParentIds);
                         h += '</div>';
                     }
@@ -219,35 +250,31 @@ const TreeRenderer = (() => {
         }
 
         function buildCouple(person, spouses, parentIds) {
-            var h = '<div class="tree-couple">';
+            var h = '';
             if (spouses.length === 0) {
-                h += nodeHTML(person, true);
+                h += '<div class="tf-couple-member" data-person-id="' + person.id + '">' + nodeHTML(person) + '</div>';
             } else {
-                var isPC = parentIds && parentIds.length > 0 && isChildOf(person, parentIds);
-                spouses.forEach(function(sp, idx) {
+                spouses.forEach(function (sp, idx) {
                     vis[sp.member.id] = true;
-                    var lp, rp, lc, rc;
-                    if (person.gender === 'male') {
-                        lp = sp.member; rp = person;
-                        lc = false; rc = isPC;
-                    } else {
-                        lp = person; rp = sp.member;
-                        lc = isPC; rc = false;
-                    }
-                    var isSC = parentIds && parentIds.length > 0 && isChildOf(sp.member, parentIds);
-                    if (isSC) { lc = (lp.id === sp.member.id); rc = (rp.id === sp.member.id); }
-                    if (!isSC && isPC) { lc = (lp.id === person.id); rc = (rp.id === person.id); }
+                    var lp, rp;
+                    if (person.gender === 'male') { lp = sp.member; rp = person; }
+                    else { lp = person; rp = sp.member; }
 
-                    if (idx > 0) h += '<div class="couple-spacer"></div>';
-                    h += '<div class="couple-pair">';
-                    h += '<div class="couple-member' + (lc ? ' is-child-anchor' : '') + '">' + nodeHTML(lp, false) + '</div>';
-                    h += '<div class="couple-connector"><div class="couple-line ' + (sp.isEx ? 'ex-line' : 'married-line') + '"></div>';
-                    h += '<span class="couple-symbol">' + (sp.isEx ? '💔' : '❤️') + '</span></div>';
-                    h += '<div class="couple-member' + (rc ? ' is-child-anchor' : '') + '">' + nodeHTML(rp, false) + '</div>';
+                    var personIsChild = parentIds && parentIds.length > 0 && isChildOf(person, parentIds);
+                    var spouseIsChild = parentIds && parentIds.length > 0 && isChildOf(sp.member, parentIds);
+                    var anchorId = personIsChild ? person.id : (spouseIsChild ? sp.member.id : person.id);
+
+                    if (idx > 0) h += '<div style="width:10px"></div>';
+                    h += '<div class="tf-couple">';
+                    h += '<div class="tf-couple-member" data-person-id="' + lp.id + '" ' +
+                        (lp.id === anchorId ? 'data-is-anchor="1"' : '') + '>' + nodeHTML(lp) + '</div>';
+                    h += '<div class="tf-couple-link"><div class="tf-couple-line' + (sp.isEx ? ' tf-ex' : '') + '"></div>';
+                    h += '<span class="tf-couple-heart">' + (sp.isEx ? '💔' : '❤️') + '</span></div>';
+                    h += '<div class="tf-couple-member" data-person-id="' + rp.id + '" ' +
+                        (rp.id === anchorId ? 'data-is-anchor="1"' : '') + '>' + nodeHTML(rp) + '</div>';
                     h += '</div>';
                 });
             }
-            h += '</div>';
             return h;
         }
 
@@ -259,218 +286,322 @@ const TreeRenderer = (() => {
             var cm = (typeof DragConnect !== 'undefined' && DragConnect.isActive) ? DragConnect.isActive() : false;
             var emoji = getPersonEmoji(p.gender, p.birthDate, p.deathDate);
 
-            var html = '<div class="tree-person ' + gc + (cm ? ' connectable' : '') + '" data-member-id="' + p.id + '" '
+            var html = '<div class="tf-person ' + gc + (cm ? ' connectable' : '') + '" data-member-id="' + p.id + '" '
                 + (cm ? '' : 'onclick="App.viewMember(\'' + p.id + '\')"') + '>';
-            html += '<div class="tree-person-photo">';
-            html += p.photo ? '<img src="' + p.photo + '">' : '<div class="tree-person-emoji" style="background:' + bg + '">' + emoji + '</div>';
+            html += '<div class="tf-photo">';
+            html += p.photo ? '<img src="' + p.photo + '">' : '<div class="tf-emoji" style="background:' + bg + '">' + emoji + '</div>';
             html += '</div>';
-            html += '<div class="tree-person-name">' + p.firstName + ' ' + p.lastName + '</div>';
-            if (p.birthDate) html += '<div class="tree-person-date">' + formatBirthDate(p.birthDate) + '</div>';
-            if (age !== null) html += '<div class="tree-person-age">' + (p.status === 'deceased' ? '🕯️ ' : '') + 'גיל ' + age + '</div>';
-            else if (p.status === 'deceased') html += '<div class="tree-person-age">🕯️</div>';
+            html += '<div class="tf-name">' + p.firstName + ' ' + p.lastName + '</div>';
+            if (p.birthDate) html += '<div class="tf-date">' + formatBirthDate(p.birthDate) + '</div>';
+            if (age !== null) html += '<div class="tf-age">' + (p.status === 'deceased' ? '🕯️ ' : '') + 'גיל ' + age + '</div>';
+            else if (p.status === 'deceased') html += '<div class="tf-age">🕯️</div>';
             html += '</div>';
             return html;
         }
 
         w.innerHTML = build(root, 1, []);
 
-        // Draw connectors after layout
-        requestAnimationFrame(function() {
-            requestAnimationFrame(function() {
+        // Draw connectors after DOM layout
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
                 drawAllConnectors();
             });
         });
 
         applyZoom();
+
+        if (typeof DragConnect !== 'undefined' && DragConnect.isActive && DragConnect.isActive()) {
+            DragConnect.toggleMode();
+            DragConnect.toggleMode();
+        }
     }
 
     // =============================================
-    // SVG CONNECTOR DRAWING WITH ROUNDED CORNERS
+    // DRAW CONNECTORS - Using absolutely positioned DIVs
     // =============================================
     function drawAllConnectors() {
-        var wrapper = document.getElementById('treeWrapper');
-        if (!wrapper) return;
+        // Remove old connector lines
+        document.querySelectorAll('.tf-line').forEach(function (el) { el.remove(); });
 
-        // Remove old SVG
-        var old = wrapper.querySelector('.tree-svg-connectors');
-        if (old) old.remove();
+        // For each tf-tree that has a connector area
+        var areas = document.querySelectorAll('.tf-connector-area');
+        areas.forEach(function (area) {
+            drawConnectorForArea(area);
+        });
+    }
 
-        wrapper.style.position = 'relative';
-        var wRect = wrapper.getBoundingClientRect();
+    function drawConnectorForArea(area) {
+        var treeEl = area.parentElement; // .tf-tree
+        var ncEl = treeEl.querySelector(':scope > .tf-nc');
+        var childrenRow = treeEl.querySelector(':scope > .tf-children-row');
+        if (!ncEl || !childrenRow) return;
 
-        var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.classList.add('tree-svg-connectors');
-        svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:0;';
-        svg.setAttribute('width', wrapper.scrollWidth);
-        svg.setAttribute('height', wrapper.scrollHeight);
-
-        var COLOR = '#4CAF50';
-        var COLOR_LIGHT = '#A5D6A7';
-        var WIDTH = 2;
-        var GAP = 22; // vertical gap between levels
-
-        // Process each family unit that has children
-        var units = wrapper.querySelectorAll('.tree-family-unit');
-        units.forEach(function(unit) {
-            var childArea = unit.querySelector(':scope > .tree-children-area');
-            if (!childArea) return;
-
-            var coupleEl = unit.querySelector(':scope > .tree-couple');
-            if (!coupleEl) return;
-
-            var branches = childArea.querySelectorAll(':scope > .tree-child-branch');
-            if (branches.length === 0) return;
-
-            // Parent bottom center
-            var cRect = coupleEl.getBoundingClientRect();
-            var px = cRect.left + cRect.width / 2 - wRect.left;
-            var py = cRect.bottom - wRect.top;
-
-            // Children top centers
-            var childPts = [];
-            branches.forEach(function(br) {
-                var fu = br.querySelector(':scope > .tree-family-unit');
-                if (!fu) return;
-                var fc = fu.querySelector(':scope > .tree-couple');
-                if (!fc) return;
-
-                // Find the anchor (child member) in the couple
-                var anchor = fc.querySelector('.couple-member.is-child-anchor .tree-person');
-                if (!anchor) {
-                    // Try single person
-                    anchor = fc.querySelector('.tree-person');
-                }
-                if (!anchor) anchor = fc;
-
-                var aRect = anchor.getBoundingClientRect();
-                childPts.push({
-                    x: aRect.left + aRect.width / 2 - wRect.left,
-                    y: aRect.top - wRect.top
-                });
-            });
-
-            if (childPts.length === 0) return;
-
-            // Mid Y point for the horizontal bracket
-            var midY = py + GAP;
-
-            // Ensure midY is between parent bottom and first child top
-            var minChildY = Infinity;
-            childPts.forEach(function(cp) { if (cp.y < minChildY) minChildY = cp.y; });
-            if (midY > minChildY - 5) midY = (py + minChildY) / 2;
-
-            // ---- DRAW WITH ROUNDED CORNERS ----
-
-            // 1. Vertical stem: parent bottom → midY
-            addLine(svg, px, py, px, midY, COLOR, WIDTH);
-
-            if (childPts.length === 1) {
-                // Single child: stem continues down to child
-                var cp = childPts[0];
-                if (Math.abs(cp.x - px) < 3) {
-                    // Straight line
-                    addLine(svg, px, midY, cp.x, cp.y, COLOR, WIDTH);
-                } else {
-                    // Rounded L-shape
-                    drawRoundedL(svg, px, midY, cp.x, cp.y, R, COLOR, WIDTH);
-                }
-            } else {
-                // Multiple children
-                var leftX = Infinity, rightX = -Infinity;
-                childPts.forEach(function(cp) {
-                    if (cp.x < leftX) leftX = cp.x;
-                    if (cp.x > rightX) rightX = cp.x;
-                });
-
-                // 2. Horizontal bracket: leftX → rightX at midY
-                addLine(svg, leftX, midY, rightX, midY, COLOR, WIDTH);
-
-                // 3. Drop from bracket to each child - with rounded corners
-                childPts.forEach(function(cp) {
-                    drawRoundedDrop(svg, cp.x, midY, cp.x, cp.y, R, COLOR, WIDTH);
-                });
+        // Get branches
+        var branches = [];
+        for (var i = 0; i < childrenRow.children.length; i++) {
+            if (childrenRow.children[i].classList.contains('tf-branch')) {
+                branches.push(childrenRow.children[i]);
             }
+        }
+        if (branches.length === 0) return;
+
+        // Reference: the tree element's bounding box
+        var treeRect = treeEl.getBoundingClientRect();
+
+        // Parent: find bottom center of the couple/person
+        var parentBottom = getParentBottom(ncEl, treeRect);
+
+        // Children: find top center of each child's anchor person
+        var childTops = branches.map(function (branch) {
+            return getChildTop(branch, treeRect);
         });
 
-        wrapper.insertBefore(svg, wrapper.firstChild);
-    }
+        // The connector area sits between parent and children
+        // Set its height to V_GAP
+        area.style.height = V_GAP + 'px';
+        area.style.position = 'relative';
 
-    // Draw a simple line
-    function addLine(svg, x1, y1, x2, y2, color, width) {
-        var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', x1);
-        line.setAttribute('y1', y1);
-        line.setAttribute('x2', x2);
-        line.setAttribute('y2', y2);
-        line.setAttribute('stroke', color);
-        line.setAttribute('stroke-width', width);
-        line.setAttribute('stroke-linecap', 'round');
-        svg.appendChild(line);
-    }
+        // Calculate positions relative to the connector area
+        var areaRect = area.getBoundingClientRect();
 
-    // Draw an L-shaped connector with rounded corner
-    // From (x1,y1) going down to horizontal level, then across to (x2,y2)
-    function drawRoundedL(svg, x1, y1, x2, y2, r, color, width) {
-        var dx = x2 - x1;
-        var dy = y2 - y1;
-        var dir = dx > 0 ? 1 : -1;
-        var cr = Math.min(r, Math.abs(dx), Math.abs(dy) / 2);
+        // Parent X relative to area
+        var parentX = parentBottom.x - areaRect.left;
+        // Each child X relative to area
+        var childXs = childTops.map(function (ct) { return ct.x - areaRect.left; });
 
-        var d;
-        if (cr < 1) {
-            // No room for radius, just straight lines
-            d = 'M' + x1 + ',' + y1 + ' L' + x1 + ',' + y2 + ' L' + x2 + ',' + y2;
+        // Midpoint Y for horizontal line
+        var midY = Math.round(V_GAP / 2);
+
+        // 1. Vertical line from parent down to midpoint
+        addLine(area, parentX - LINE_WIDTH / 2, 0, LINE_WIDTH, midY + LINE_WIDTH / 2, LINE_COLOR, CORNER_R);
+
+        if (branches.length === 1) {
+            // Single child: just extend vertical line all the way down
+            var cx = childXs[0];
+            if (Math.abs(cx - parentX) < 3) {
+                // Straight down
+                addLine(area, parentX - LINE_WIDTH / 2, 0, LINE_WIDTH, V_GAP, LINE_COLOR, 0);
+            } else {
+                // L-shape: parent down to mid, horizontal to child x, then down
+                addLine(area, parentX - LINE_WIDTH / 2, 0, LINE_WIDTH, midY + LINE_WIDTH / 2, LINE_COLOR, 0);
+                var lx = Math.min(parentX, cx);
+                var rx = Math.max(parentX, cx);
+                addLine(area, lx, midY - LINE_WIDTH / 2, rx - lx + LINE_WIDTH, LINE_WIDTH, LINE_COLOR, 0);
+                addLine(area, cx - LINE_WIDTH / 2, midY, LINE_WIDTH, V_GAP - midY, LINE_COLOR, 0);
+            }
         } else {
-            // Horizontal at y1, then curve down, then vertical to y2
-            d = 'M' + x1 + ',' + y1 +
-                ' L' + (x2 - dir * cr) + ',' + y1 +
-                ' Q' + x2 + ',' + y1 + ' ' + x2 + ',' + (y1 + cr) +
-                ' L' + x2 + ',' + y2;
+            // Multiple children
+            // Horizontal line from leftmost child to rightmost child at midY
+            var leftX = Math.min.apply(null, childXs);
+            var rightX = Math.max.apply(null, childXs);
+            addLine(area, leftX, midY - LINE_WIDTH / 2, rightX - leftX + LINE_WIDTH, LINE_WIDTH, LINE_COLOR, 0);
+
+            // Vertical drop from midY to each child
+            childXs.forEach(function (cx) {
+                addLine(area, cx - LINE_WIDTH / 2, midY, LINE_WIDTH, V_GAP - midY, LINE_COLOR, 0);
+            });
+
+            // If parent X is not on the horizontal line, extend the horizontal line or add stem
+            if (parentX < leftX) {
+                addLine(area, parentX, midY - LINE_WIDTH / 2, leftX - parentX, LINE_WIDTH, LINE_COLOR, 0);
+            } else if (parentX > rightX) {
+                addLine(area, rightX, midY - LINE_WIDTH / 2, parentX - rightX + LINE_WIDTH, LINE_WIDTH, LINE_COLOR, 0);
+            }
+            // Parent vertical stem is already drawn above
         }
 
-        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', d);
-        path.setAttribute('stroke', color);
-        path.setAttribute('stroke-width', width);
-        path.setAttribute('fill', 'none');
-        path.setAttribute('stroke-linecap', 'round');
-        svg.appendChild(path);
+        // Now add rounded corners using SVG overlay
+        addRoundedCorners(area, parentX, childXs, midY);
     }
 
-    // Draw a vertical drop from (x1,y1) to (x1,y2) with rounded corner at top
-    // The top of the drop connects to a horizontal line at y1
-    function drawRoundedDrop(svg, x1, y1, x2, y2, r, color, width) {
-        var dropH = y2 - y1;
-        if (dropH <= 0) return;
+    function getParentBottom(ncEl, treeRect) {
+        // Find the couple or single person
+        var couple = ncEl.querySelector('.tf-couple');
+        var el;
+        if (couple) {
+            el = couple;
+        } else {
+            el = ncEl.querySelector('.tf-person');
+        }
+        if (!el) el = ncEl;
+        var r = el.getBoundingClientRect();
+        return {
+            x: r.left + r.width / 2,
+            y: r.bottom
+        };
+    }
 
-        // Simple vertical line for the drop - the rounding happens at the junction
-        // We draw the drop as a path that starts with a tiny curve from horizontal to vertical
-        var cr = Math.min(r, dropH / 3);
+    function getChildTop(branch, treeRect) {
+        // Look for anchor member in couple
+        var anchorMember = branch.querySelector('.tf-couple-member[data-is-anchor="1"]');
+        var el = null;
 
-        // The drop just needs to be a vertical line from the bracket
-        // Rounded corners at the T-junction are created by making the horizontal line
-        // and vertical drops as separate rounded-cap paths
-        addLine(svg, x1, y1, x2, y2, color, width);
+        if (anchorMember) {
+            el = anchorMember.querySelector('.tf-person');
+        }
+
+        if (!el) {
+            // Single person (no couple)
+            var singleMember = branch.querySelector(':scope > .tf-tree > .tf-nc > .tf-couple-member');
+            if (singleMember) {
+                el = singleMember.querySelector('.tf-person');
+            }
+        }
+
+        if (!el) {
+            el = branch.querySelector('.tf-person');
+        }
+        if (!el) el = branch;
+
+        var r = el.getBoundingClientRect();
+        return {
+            x: r.left + r.width / 2,
+            y: r.top
+        };
+    }
+
+    function addLine(parent, x, y, w, h, color, radius) {
+        var d = document.createElement('div');
+        d.className = 'tf-line';
+        d.style.cssText = 'position:absolute;' +
+            'left:' + Math.round(x) + 'px;' +
+            'top:' + Math.round(y) + 'px;' +
+            'width:' + Math.round(Math.max(w, LINE_WIDTH)) + 'px;' +
+            'height:' + Math.round(Math.max(h, LINE_WIDTH)) + 'px;' +
+            'background:' + color + ';' +
+            'border-radius:' + (radius || 0) + 'px;' +
+            'pointer-events:none;z-index:1;';
+        parent.appendChild(d);
+    }
+
+    function addRoundedCorners(area, parentX, childXs, midY) {
+        // Replace sharp corners with SVG rounded corners
+        // Clear the simple lines and redraw with SVG
+        // Remove the simple line divs we just added
+        var oldLines = area.querySelectorAll('.tf-line');
+        oldLines.forEach(function (l) { l.remove(); });
+
+        // Create SVG
+        var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'tf-line');
+        svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible;';
+        var areaW = area.offsetWidth;
+        svg.setAttribute('width', areaW);
+        svg.setAttribute('height', V_GAP);
+        svg.setAttribute('viewBox', '0 0 ' + areaW + ' ' + V_GAP);
+
+        var paths = '';
+        var r = CORNER_R;
+
+        if (childXs.length === 1) {
+            var cx = childXs[0];
+            if (Math.abs(cx - parentX) < 3) {
+                // Straight vertical line
+                paths += svgLine(parentX, 0, parentX, V_GAP);
+            } else {
+                // L-shape with rounded corner
+                paths += svgPathLShape(parentX, 0, cx, V_GAP, midY, r);
+            }
+        } else {
+            // Multiple children
+            var leftX = Math.min.apply(null, childXs);
+            var rightX = Math.max.apply(null, childXs);
+
+            // Ensure horizontal bar extends to parent if needed
+            var barLeft = Math.min(leftX, parentX);
+            var barRight = Math.max(rightX, parentX);
+
+            // Parent stem down to midY
+            paths += svgLine(parentX, 0, parentX, midY);
+
+            // Horizontal bar at midY
+            paths += svgLine(barLeft, midY, barRight, midY);
+
+            // Each child: vertical drop from midY with rounded corner
+            childXs.forEach(function (cx) {
+                if (Math.abs(cx - parentX) < 3) {
+                    // Directly under parent - straight line continues
+                    paths += svgLine(cx, midY, cx, V_GAP);
+                } else {
+                    // Rounded corner from horizontal bar down
+                    paths += svgCornerDrop(cx, midY, V_GAP, r, cx < parentX ? 'left' : 'right');
+                }
+            });
+        }
+
+        svg.innerHTML = paths;
+        area.appendChild(svg);
+    }
+
+    function svgLine(x1, y1, x2, y2) {
+        return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 +
+            '" stroke="' + LINE_COLOR + '" stroke-width="' + LINE_WIDTH +
+            '" stroke-linecap="round"/>';
+    }
+
+    function svgPathLShape(x1, y1, x2, y2, midY, r) {
+        // From (x1, y1) down to midY, then horizontal to x2, then down to y2
+        // With rounded corners at the two bends
+        r = Math.min(r, Math.abs(x2 - x1) / 2, Math.abs(midY - y1) / 2, Math.abs(y2 - midY) / 2);
+        var goingRight = x2 > x1;
+
+        var path = 'M ' + x1 + ' ' + y1;
+        // Down to first corner
+        path += ' L ' + x1 + ' ' + (midY - r);
+        // Corner 1
+        if (goingRight) {
+            path += ' Q ' + x1 + ' ' + midY + ' ' + (x1 + r) + ' ' + midY;
+        } else {
+            path += ' Q ' + x1 + ' ' + midY + ' ' + (x1 - r) + ' ' + midY;
+        }
+        // Horizontal to second corner
+        if (goingRight) {
+            path += ' L ' + (x2 - r) + ' ' + midY;
+            path += ' Q ' + x2 + ' ' + midY + ' ' + x2 + ' ' + (midY + r);
+        } else {
+            path += ' L ' + (x2 + r) + ' ' + midY;
+            path += ' Q ' + x2 + ' ' + midY + ' ' + x2 + ' ' + (midY + r);
+        }
+        // Down to end
+        path += ' L ' + x2 + ' ' + y2;
+
+        return '<path d="' + path + '" stroke="' + LINE_COLOR + '" stroke-width="' + LINE_WIDTH +
+            '" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+    }
+
+    function svgCornerDrop(cx, midY, bottomY, r, side) {
+        // Draw a rounded corner where horizontal line meets vertical drop
+        // The horizontal line is already drawn, so just draw the vertical with rounded top
+        r = Math.min(r, (bottomY - midY) / 2);
+        return '<line x1="' + cx + '" y1="' + midY + '" x2="' + cx + '" y2="' + bottomY +
+            '" stroke="' + LINE_COLOR + '" stroke-width="' + LINE_WIDTH + '" stroke-linecap="round"/>';
     }
 
     // Resize handler
     var _rt;
-    window.addEventListener('resize', function() {
+    window.addEventListener('resize', function () {
         clearTimeout(_rt);
         _rt = setTimeout(drawAllConnectors, 250);
     });
 
-    // Ctrl+wheel zoom
-    document.addEventListener('DOMContentLoaded', function() {
+    // Ctrl+Wheel zoom
+    document.addEventListener('DOMContentLoaded', function () {
         var c = document.getElementById('treeContainer');
-        if (c) c.addEventListener('wheel', function(e) {
+        if (c) c.addEventListener('wheel', function (e) {
             if (e.ctrlKey || e.metaKey) { e.preventDefault(); e.deltaY < 0 ? zoomIn() : zoomOut(); }
         }, { passive: false });
     });
 
     return {
-        setLevel: setLevel, populateRootSelect: populateRootSelect, render: render,
-        zoomIn: zoomIn, zoomOut: zoomOut, zoomReset: zoomReset, zoomFit: zoomFit,
-        exportAsImage: exportAsImage, exportAsPDF: exportAsPDF, toggleExportMenu: toggleExportMenu
+        setLevel: setLevel,
+        populateRootSelect: populateRootSelect,
+        render: render,
+        zoomIn: zoomIn,
+        zoomOut: zoomOut,
+        zoomReset: zoomReset,
+        zoomFit: zoomFit,
+        exportAsImage: exportAsImage,
+        exportAsPDF: exportAsPDF,
+        toggleExportMenu: toggleExportMenu
     };
 })();
