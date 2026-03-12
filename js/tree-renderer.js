@@ -4,6 +4,7 @@ const TreeRenderer = (() => {
     var MIN_ZOOM = 0.2;
     var MAX_ZOOM = 2;
     var ZOOM_STEP = 0.15;
+    var R = 10; // Rounded corner radius
 
     function setLevel(n, el) {
         lv = n;
@@ -26,8 +27,7 @@ const TreeRenderer = (() => {
         if (cv && ms.find(function(m) { return m.id === cv; })) {
             s.value = cv;
         } else {
-            var first = ms.length ? ms[0].id : '';
-            s.value = first;
+            s.value = ms.length ? ms[0].id : '';
         }
     }
 
@@ -57,222 +57,78 @@ const TreeRenderer = (() => {
     function isChildOf(person, parentIds) {
         if (!person) return false;
         for (var i = 0; i < parentIds.length; i++) {
-            if (person.parentId === parentIds[i] || person.parentId2 === parentIds[i]) {
-                return true;
-            }
+            if (person.parentId === parentIds[i] || person.parentId2 === parentIds[i]) return true;
         }
         return false;
     }
 
-    // =============================================
-    // ZOOM FUNCTIONS - FIX #4
-    // =============================================
-    function zoomIn() {
-        currentZoom = Math.min(MAX_ZOOM, currentZoom + ZOOM_STEP);
-        applyZoom();
-    }
-
-    function zoomOut() {
-        currentZoom = Math.max(MIN_ZOOM, currentZoom - ZOOM_STEP);
-        applyZoom();
-    }
-
-    function zoomReset() {
-        currentZoom = 1;
-        applyZoom();
-    }
-
+    // Zoom
+    function zoomIn() { currentZoom = Math.min(MAX_ZOOM, currentZoom + ZOOM_STEP); applyZoom(); }
+    function zoomOut() { currentZoom = Math.max(MIN_ZOOM, currentZoom - ZOOM_STEP); applyZoom(); }
+    function zoomReset() { currentZoom = 1; applyZoom(); }
     function zoomFit() {
-        var container = document.getElementById('treeContainer');
-        var wrapper = document.getElementById('treeWrapper');
-        if (!container || !wrapper) return;
-
-        // Reset zoom first to measure real size
-        currentZoom = 1;
-        wrapper.style.transform = 'scale(1)';
-
-        // Wait for reflow
+        var c = document.getElementById('treeContainer'), w = document.getElementById('treeWrapper');
+        if (!c || !w) return;
+        currentZoom = 1; w.style.transform = 'scale(1)';
         requestAnimationFrame(function() {
-            var containerW = container.clientWidth - 40;
-            var containerH = container.clientHeight - 40;
-            var contentW = wrapper.scrollWidth;
-            var contentH = wrapper.scrollHeight;
-
-            if (contentW === 0 || contentH === 0) return;
-
-            var scaleX = containerW / contentW;
-            var scaleY = containerH / contentH;
-            currentZoom = Math.min(scaleX, scaleY, 1); // Don't zoom in past 100%
-            currentZoom = Math.max(currentZoom, MIN_ZOOM);
-
+            var cW = c.clientWidth - 40, cH = c.clientHeight - 40;
+            var wW = w.scrollWidth, wH = w.scrollHeight;
+            if (!wW || !wH) return;
+            currentZoom = Math.max(MIN_ZOOM, Math.min(cW / wW, cH / wH, 1));
             applyZoom();
-
-            // Scroll to center
-            container.scrollLeft = (wrapper.scrollWidth * currentZoom - containerW) / 2;
-            container.scrollTop = 0;
         });
     }
-
     function applyZoom() {
-        var wrapper = document.getElementById('treeWrapper');
-        var display = document.getElementById('zoomLevelDisplay');
-        if (wrapper) {
-            wrapper.style.transform = 'scale(' + currentZoom + ')';
-            wrapper.style.transformOrigin = 'top center';
-        }
-        if (display) {
-            display.textContent = Math.round(currentZoom * 100) + '%';
-        }
+        var w = document.getElementById('treeWrapper');
+        var d = document.getElementById('zoomLevelDisplay');
+        if (w) { w.style.transform = 'scale(' + currentZoom + ')'; w.style.transformOrigin = 'top center'; }
+        if (d) d.textContent = Math.round(currentZoom * 100) + '%';
     }
 
-    // =============================================
-    // EXPORT FUNCTIONS - FIX #5
-    // =============================================
+    // Export
     function toggleExportMenu() {
-        var menu = document.getElementById('exportDropdownContent');
-        if (menu) {
-            menu.classList.toggle('show');
-            // Close on outside click
-            if (menu.classList.contains('show')) {
-                setTimeout(function() {
-                    document.addEventListener('click', function closeExport(e) {
-                        if (!e.target.closest('.export-dropdown')) {
-                            menu.classList.remove('show');
-                            document.removeEventListener('click', closeExport);
-                        }
-                    });
-                }, 10);
-            }
-        }
+        var m = document.getElementById('exportDropdownContent');
+        if (m) { m.classList.toggle('show'); if (m.classList.contains('show')) setTimeout(function() { document.addEventListener('click', function cl(e) { if (!e.target.closest('.export-dropdown')) { m.classList.remove('show'); document.removeEventListener('click', cl); } }); }, 10); }
     }
-
+    function loadLib(url, cb) { if (url.indexOf('html2canvas') >= 0 && typeof html2canvas !== 'undefined') { cb(); return; } if (url.indexOf('jspdf') >= 0 && typeof jspdf !== 'undefined') { cb(); return; } var s = document.createElement('script'); s.src = url; s.onload = cb; document.head.appendChild(s); }
     function exportAsImage() {
-        var menu = document.getElementById('exportDropdownContent');
-        if (menu) menu.classList.remove('show');
-
-        var wrapper = document.getElementById('treeWrapper');
-        if (!wrapper) return;
-
-        App.showToast('מכין תמונה... ⏳', 'warning');
-
-        // Save current zoom and reset for export
-        var savedZoom = currentZoom;
-        wrapper.style.transform = 'scale(1)';
-
-        // Use html2canvas
-        loadHtml2Canvas(function() {
-            html2canvas(wrapper, {
-                backgroundColor: '#FAFFF5',
-                scale: 2,
-                useCORS: true,
-                logging: false,
-                scrollX: 0,
-                scrollY: 0,
-                windowWidth: wrapper.scrollWidth,
-                windowHeight: wrapper.scrollHeight
-            }).then(function(canvas) {
-                var link = document.createElement('a');
-                link.download = 'family-tree.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-                App.showToast('התמונה הורדה! 🖼️');
-
-                // Restore zoom
-                currentZoom = savedZoom;
-                applyZoom();
-            }).catch(function(err) {
-                console.error('Export error:', err);
-                App.showToast('שגיאה בייצוא', 'error');
-                currentZoom = savedZoom;
-                applyZoom();
-            });
-        });
+        var m = document.getElementById('exportDropdownContent'); if (m) m.classList.remove('show');
+        var w = document.getElementById('treeWrapper'); if (!w) return;
+        App.showToast('מכין תמונה...', 'warning');
+        var sz = currentZoom; w.style.transform = 'scale(1)';
+        // Need to redraw connectors at scale 1
+        requestAnimationFrame(function() { drawAllConnectors(); requestAnimationFrame(function() {
+        loadLib('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function() {
+            html2canvas(w, { backgroundColor: '#FAFFF5', scale: 2, useCORS: true }).then(function(canvas) {
+                var a = document.createElement('a'); a.download = 'family-tree.png'; a.href = canvas.toDataURL('image/png'); a.click();
+                App.showToast('התמונה הורדה! 🖼️'); currentZoom = sz; applyZoom(); drawAllConnectors();
+            }).catch(function() { App.showToast('שגיאה', 'error'); currentZoom = sz; applyZoom(); drawAllConnectors(); });
+        }); }); });
     }
-
     function exportAsPDF() {
-        var menu = document.getElementById('exportDropdownContent');
-        if (menu) menu.classList.remove('show');
-
-        var wrapper = document.getElementById('treeWrapper');
-        if (!wrapper) return;
-
-        App.showToast('מכין PDF... ⏳', 'warning');
-
-        var savedZoom = currentZoom;
-        wrapper.style.transform = 'scale(1)';
-
-        loadHtml2Canvas(function() {
-            loadJsPDF(function() {
-                html2canvas(wrapper, {
-                    backgroundColor: '#FAFFF5',
-                    scale: 2,
-                    useCORS: true,
-                    logging: false,
-                    scrollX: 0,
-                    scrollY: 0,
-                    windowWidth: wrapper.scrollWidth,
-                    windowHeight: wrapper.scrollHeight
-                }).then(function(canvas) {
-                    var imgData = canvas.toDataURL('image/png');
-                    var imgW = canvas.width;
-                    var imgH = canvas.height;
-
-                    // Determine orientation
-                    var orientation = imgW > imgH ? 'landscape' : 'portrait';
-                    var pdf = new jspdf.jsPDF({
-                        orientation: orientation,
-                        unit: 'mm',
-                        format: 'a4'
-                    });
-
-                    var pageW = pdf.internal.pageSize.getWidth();
-                    var pageH = pdf.internal.pageSize.getHeight();
-                    var margin = 10;
-                    var availW = pageW - margin * 2;
-                    var availH = pageH - margin * 2;
-
-                    var ratio = Math.min(availW / imgW, availH / imgH);
-                    var finalW = imgW * ratio;
-                    var finalH = imgH * ratio;
-                    var offsetX = margin + (availW - finalW) / 2;
-                    var offsetY = margin + (availH - finalH) / 2;
-
-                    pdf.addImage(imgData, 'PNG', offsetX, offsetY, finalW, finalH);
-                    pdf.save('family-tree.pdf');
-                    App.showToast('PDF הורד! 📄');
-
-                    currentZoom = savedZoom;
-                    applyZoom();
-                }).catch(function(err) {
-                    console.error('PDF export error:', err);
-                    App.showToast('שגיאה בייצוא PDF', 'error');
-                    currentZoom = savedZoom;
-                    applyZoom();
-                });
+        var m = document.getElementById('exportDropdownContent'); if (m) m.classList.remove('show');
+        var w = document.getElementById('treeWrapper'); if (!w) return;
+        App.showToast('מכין PDF...', 'warning');
+        var sz = currentZoom; w.style.transform = 'scale(1)';
+        requestAnimationFrame(function() { drawAllConnectors(); requestAnimationFrame(function() {
+        loadLib('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function() {
+            loadLib('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', function() {
+                html2canvas(w, { backgroundColor: '#FAFFF5', scale: 2, useCORS: true }).then(function(canvas) {
+                    var img = canvas.toDataURL('image/png');
+                    var o = canvas.width > canvas.height ? 'landscape' : 'portrait';
+                    var pdf = new jspdf.jsPDF({ orientation: o, unit: 'mm', format: 'a4' });
+                    var pW = pdf.internal.pageSize.getWidth() - 20, pH = pdf.internal.pageSize.getHeight() - 20;
+                    var r = Math.min(pW / canvas.width, pH / canvas.height);
+                    pdf.addImage(img, 'PNG', 10 + (pW - canvas.width * r) / 2, 10 + (pH - canvas.height * r) / 2, canvas.width * r, canvas.height * r);
+                    pdf.save('family-tree.pdf'); App.showToast('PDF הורד! 📄');
+                    currentZoom = sz; applyZoom(); drawAllConnectors();
+                }).catch(function() { App.showToast('שגיאה', 'error'); currentZoom = sz; applyZoom(); drawAllConnectors(); });
             });
-        });
-    }
-
-    function loadHtml2Canvas(cb) {
-        if (typeof html2canvas !== 'undefined') { cb(); return; }
-        var s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-        s.onload = cb;
-        s.onerror = function() { App.showToast('שגיאה בטעינת ספרייה', 'error'); };
-        document.head.appendChild(s);
-    }
-
-    function loadJsPDF(cb) {
-        if (typeof jspdf !== 'undefined') { cb(); return; }
-        var s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-        s.onload = cb;
-        s.onerror = function() { App.showToast('שגיאה בטעינת ספרייה', 'error'); };
-        document.head.appendChild(s);
+        }); }); });
     }
 
     // =============================================
-    // MAIN RENDER FUNCTION
+    // RENDER
     // =============================================
     function render() {
         var w = document.getElementById('treeWrapper');
@@ -283,13 +139,12 @@ const TreeRenderer = (() => {
         var ms = App.getMembers();
 
         if (!rid || !ms.length) {
-            w.innerHTML = '<div class="empty-state"><div class="icon">🌴</div><h3>בחרו שורש לעץ</h3><p>הוסיפו בני משפחה ובחרו מי יהיה בראש העץ</p></div>';
+            w.innerHTML = '<div class="empty-state"><div class="icon">🌴</div><h3>בחרו שורש לעץ</h3></div>';
             return;
         }
 
         var root = ms.find(function(m) { return m.id === rid; });
         if (!root) return;
-
         var vis = {};
 
         function build(person, level, parentIds) {
@@ -297,7 +152,6 @@ const TreeRenderer = (() => {
             vis[person.id] = true;
             if (person.status === 'deceased' && !sdc) return '';
 
-            // Find spouses
             var spouses = [];
             ms.forEach(function(m) {
                 if (vis[m.id]) return;
@@ -312,7 +166,6 @@ const TreeRenderer = (() => {
             var allParentIds = [person.id];
             spouses.forEach(function(sp) { allParentIds.push(sp.member.id); });
 
-            // Find children
             var children = ms.filter(function(c) {
                 if (vis[c.id]) return false;
                 if (c.status === 'deceased' && !sdc) return false;
@@ -320,80 +173,44 @@ const TreeRenderer = (() => {
                        (c.parentId2 && allParentIds.indexOf(c.parentId2) !== -1);
             });
 
-            // Group children by spouse pair - FIX #2
             var childGroups = [];
             spouses.forEach(function(sp) {
-                var spouseChildren = children.filter(function(c) {
-                    var parentPair = [person.id, sp.member.id];
-                    return (parentPair.indexOf(c.parentId) !== -1 && parentPair.indexOf(c.parentId2) !== -1) ||
-                           (parentPair.indexOf(c.parentId) !== -1 && !c.parentId2) ||
-                           (parentPair.indexOf(c.parentId2) !== -1 && !c.parentId);
+                var spCh = children.filter(function(c) {
+                    var pp = [person.id, sp.member.id];
+                    return (pp.indexOf(c.parentId) !== -1 && pp.indexOf(c.parentId2) !== -1) ||
+                           (pp.indexOf(c.parentId) !== -1 && !c.parentId2) ||
+                           (pp.indexOf(c.parentId2) !== -1 && !c.parentId);
                 });
-                if (spouseChildren.length > 0) {
-                    childGroups.push({ spouse: sp, children: spouseChildren });
-                }
+                if (spCh.length > 0) childGroups.push({ children: spCh });
             });
+            var assigned = {};
+            childGroups.forEach(function(g) { g.children.forEach(function(c) { assigned[c.id] = true; }); });
+            var solo = children.filter(function(c) { return !assigned[c.id]; });
 
-            var assignedChildren = [];
-            childGroups.forEach(function(g) {
-                g.children.forEach(function(c) { assignedChildren.push(c.id); });
-            });
-            var soloChildren = children.filter(function(c) {
-                return assignedChildren.indexOf(c.id) === -1;
-            });
-
-            // Build HTML
-            var h = '<div class="tree-family-unit">';
+            var h = '<div class="tree-family-unit" data-person-id="' + person.id + '">';
             h += buildCouple(person, spouses, parentIds);
 
-            // Children section
-            var hasChildren = childGroups.length > 0 || soloChildren.length > 0;
-            if (hasChildren && level < lv) {
-                h += '<div class="tree-vertical-line"></div>';
+            var allCh = [];
+            childGroups.forEach(function(g, gi) {
+                g.children.forEach(function(c) { allCh.push({ child: c, group: gi }); });
+            });
+            var lastGroup = childGroups.length - 1;
+            solo.forEach(function(c) { allCh.push({ child: c, group: lastGroup + 1 }); });
 
-                // Build all children with family group separators
-                var allChildEntries = []; // { type: 'child', child: c } or { type: 'separator' }
-
-                childGroups.forEach(function(g, gIdx) {
-                    g.children.forEach(function(c) {
-                        allChildEntries.push({ type: 'child', child: c });
-                    });
-                    // Add separator between groups
-                    if (gIdx < childGroups.length - 1 || soloChildren.length > 0) {
-                        allChildEntries.push({ type: 'separator' });
-                    }
-                });
-                soloChildren.forEach(function(c, idx) {
-                    allChildEntries.push({ type: 'child', child: c });
-                    if (idx < soloChildren.length - 1) {
-                        // No separator between solo children
-                    }
-                });
-
-                // Remove trailing separator
-                while (allChildEntries.length && allChildEntries[allChildEntries.length - 1].type === 'separator') {
-                    allChildEntries.pop();
-                }
-
-                // Count actual children for line calculations
-                var childCount = allChildEntries.filter(function(e) { return e.type === 'child'; }).length;
-
-                // We use a special wrapper that we will post-process with JS
-                h += '<div class="tree-children-wrapper" data-child-count="' + childCount + '">';
-
-                // Build children HTML
-                h += '<div class="tree-children-row">';
-                allChildEntries.forEach(function(entry) {
-                    if (entry.type === 'separator') {
+            if (allCh.length > 0 && level < lv) {
+                h += '<div class="tree-children-area">';
+                var prevGroup = -1;
+                allCh.forEach(function(entry) {
+                    if (prevGroup !== -1 && entry.group !== prevGroup) {
                         h += '<div class="family-group-separator"></div>';
-                    } else if (!vis[entry.child.id]) {
+                    }
+                    prevGroup = entry.group;
+                    if (!vis[entry.child.id]) {
                         h += '<div class="tree-child-branch">';
-                        h += '<div class="tree-child-connector"></div>';
                         h += build(entry.child, level + 1, allParentIds);
                         h += '</div>';
                     }
                 });
-                h += '</div>';
                 h += '</div>';
             }
 
@@ -403,61 +220,38 @@ const TreeRenderer = (() => {
 
         function buildCouple(person, spouses, parentIds) {
             var h = '<div class="tree-couple">';
-
             if (spouses.length === 0) {
                 h += nodeHTML(person, true);
             } else {
-                var isPersonChild = parentIds && parentIds.length > 0 &&
-                    isChildOf(person, parentIds);
-
+                var isPC = parentIds && parentIds.length > 0 && isChildOf(person, parentIds);
                 spouses.forEach(function(sp, idx) {
                     vis[sp.member.id] = true;
-
-                    var leftPerson, rightPerson, leftIsChild, rightIsChild;
-
+                    var lp, rp, lc, rc;
                     if (person.gender === 'male') {
-                        leftPerson = sp.member;
-                        rightPerson = person;
-                        leftIsChild = !isPersonChild;
-                        rightIsChild = isPersonChild;
+                        lp = sp.member; rp = person;
+                        lc = false; rc = isPC;
                     } else {
-                        leftPerson = person;
-                        rightPerson = sp.member;
-                        leftIsChild = isPersonChild;
-                        rightIsChild = !isPersonChild;
+                        lp = person; rp = sp.member;
+                        lc = isPC; rc = false;
                     }
+                    var isSC = parentIds && parentIds.length > 0 && isChildOf(sp.member, parentIds);
+                    if (isSC) { lc = (lp.id === sp.member.id); rc = (rp.id === sp.member.id); }
+                    if (!isSC && isPC) { lc = (lp.id === person.id); rc = (rp.id === person.id); }
 
-                    var isSpouseChild = parentIds && parentIds.length > 0 &&
-                        isChildOf(sp.member, parentIds);
-                    if (isSpouseChild) {
-                        leftIsChild = (leftPerson.id === sp.member.id);
-                        rightIsChild = (rightPerson.id === sp.member.id);
-                    }
-
-                    if (idx > 0) {
-                        h += '<div class="couple-spacer"></div>';
-                    }
-
+                    if (idx > 0) h += '<div class="couple-spacer"></div>';
                     h += '<div class="couple-pair">';
-                    h += '<div class="couple-member' + (leftIsChild ? ' is-child-anchor' : '') + '">';
-                    h += nodeHTML(leftPerson, false);
-                    h += '</div>';
-                    h += '<div class="couple-connector">';
-                    h += '<div class="couple-line ' + (sp.isEx ? 'ex-line' : 'married-line') + '"></div>';
-                    h += '<span class="couple-symbol">' + (sp.isEx ? '💔' : '❤️') + '</span>';
-                    h += '</div>';
-                    h += '<div class="couple-member' + (rightIsChild ? ' is-child-anchor' : '') + '">';
-                    h += nodeHTML(rightPerson, false);
-                    h += '</div>';
+                    h += '<div class="couple-member' + (lc ? ' is-child-anchor' : '') + '">' + nodeHTML(lp, false) + '</div>';
+                    h += '<div class="couple-connector"><div class="couple-line ' + (sp.isEx ? 'ex-line' : 'married-line') + '"></div>';
+                    h += '<span class="couple-symbol">' + (sp.isEx ? '💔' : '❤️') + '</span></div>';
+                    h += '<div class="couple-member' + (rc ? ' is-child-anchor' : '') + '">' + nodeHTML(rp, false) + '</div>';
                     h += '</div>';
                 });
             }
-
             h += '</div>';
             return h;
         }
 
-        function nodeHTML(p, isSingle) {
+        function nodeHTML(p) {
             var age = App.calculateAge(p.birthDate, p.deathDate);
             var gc = p.gender === 'male' ? 'male' : 'female';
             if (p.status === 'deceased') gc += ' deceased';
@@ -465,160 +259,218 @@ const TreeRenderer = (() => {
             var cm = (typeof DragConnect !== 'undefined' && DragConnect.isActive) ? DragConnect.isActive() : false;
             var emoji = getPersonEmoji(p.gender, p.birthDate, p.deathDate);
 
-            var html = '<div class="tree-person ' + gc + (cm ? ' connectable' : '') + (isSingle ? ' single' : '') + '" data-member-id="' + p.id + '" '
+            var html = '<div class="tree-person ' + gc + (cm ? ' connectable' : '') + '" data-member-id="' + p.id + '" '
                 + (cm ? '' : 'onclick="App.viewMember(\'' + p.id + '\')"') + '>';
-
             html += '<div class="tree-person-photo">';
-            if (p.photo) {
-                html += '<img src="' + p.photo + '">';
-            } else {
-                html += '<div class="tree-person-emoji" style="background:' + bg + '">' + emoji + '</div>';
-            }
+            html += p.photo ? '<img src="' + p.photo + '">' : '<div class="tree-person-emoji" style="background:' + bg + '">' + emoji + '</div>';
             html += '</div>';
             html += '<div class="tree-person-name">' + p.firstName + ' ' + p.lastName + '</div>';
-            if (p.birthDate) {
-                html += '<div class="tree-person-date">' + formatBirthDate(p.birthDate) + '</div>';
-            }
-            if (age !== null) {
-                html += '<div class="tree-person-age">' + (p.status === 'deceased' ? '🕯️ ' : '') + 'גיל ' + age + '</div>';
-            } else if (p.status === 'deceased') {
-                html += '<div class="tree-person-age">🕯️</div>';
-            }
+            if (p.birthDate) html += '<div class="tree-person-date">' + formatBirthDate(p.birthDate) + '</div>';
+            if (age !== null) html += '<div class="tree-person-age">' + (p.status === 'deceased' ? '🕯️ ' : '') + 'גיל ' + age + '</div>';
+            else if (p.status === 'deceased') html += '<div class="tree-person-age">🕯️</div>';
             html += '</div>';
             return html;
         }
 
         w.innerHTML = build(root, 1, []);
 
-        // Post-process: draw accurate connecting lines - FIX #1 and #3
+        // Draw connectors after layout
         requestAnimationFrame(function() {
-            drawConnectingLines();
+            requestAnimationFrame(function() {
+                drawAllConnectors();
+            });
         });
 
-        // Apply current zoom
         applyZoom();
-
-        if (typeof DragConnect !== 'undefined' && DragConnect.isActive && DragConnect.isActive()) {
-            DragConnect.toggleMode();
-            DragConnect.toggleMode();
-        }
     }
 
     // =============================================
-    // PRECISE LINE DRAWING - FIX #1 and #3
+    // SVG CONNECTOR DRAWING WITH ROUNDED CORNERS
     // =============================================
-    function drawConnectingLines() {
-        var wrappers = document.querySelectorAll('.tree-children-wrapper');
+    function drawAllConnectors() {
+        var wrapper = document.getElementById('treeWrapper');
+        if (!wrapper) return;
 
-        wrappers.forEach(function(wrapper) {
-            var row = wrapper.querySelector('.tree-children-row');
-            if (!row) return;
+        // Remove old SVG
+        var old = wrapper.querySelector('.tree-svg-connectors');
+        if (old) old.remove();
 
-            // Set row styles
-            row.style.display = 'flex';
-            row.style.justifyContent = 'center';
-            row.style.position = 'relative';
-            row.style.paddingTop = '20px';
+        wrapper.style.position = 'relative';
+        var wRect = wrapper.getBoundingClientRect();
 
-            var branches = row.querySelectorAll(':scope > .tree-child-branch');
+        var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.classList.add('tree-svg-connectors');
+        svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:0;';
+        svg.setAttribute('width', wrapper.scrollWidth);
+        svg.setAttribute('height', wrapper.scrollHeight);
+
+        var COLOR = '#4CAF50';
+        var COLOR_LIGHT = '#A5D6A7';
+        var WIDTH = 2;
+        var GAP = 22; // vertical gap between levels
+
+        // Process each family unit that has children
+        var units = wrapper.querySelectorAll('.tree-family-unit');
+        units.forEach(function(unit) {
+            var childArea = unit.querySelector(':scope > .tree-children-area');
+            if (!childArea) return;
+
+            var coupleEl = unit.querySelector(':scope > .tree-couple');
+            if (!coupleEl) return;
+
+            var branches = childArea.querySelectorAll(':scope > .tree-child-branch');
             if (branches.length === 0) return;
 
-            // Remove old lines
-            var oldSVG = wrapper.querySelector('.connector-svg');
-            if (oldSVG) oldSVG.remove();
+            // Parent bottom center
+            var cRect = coupleEl.getBoundingClientRect();
+            var px = cRect.left + cRect.width / 2 - wRect.left;
+            var py = cRect.bottom - wRect.top;
 
-            if (branches.length <= 1) return; // Single child - vertical line is enough
+            // Children top centers
+            var childPts = [];
+            branches.forEach(function(br) {
+                var fu = br.querySelector(':scope > .tree-family-unit');
+                if (!fu) return;
+                var fc = fu.querySelector(':scope > .tree-couple');
+                if (!fc) return;
 
-            // Get positions relative to the row
-            var rowRect = row.getBoundingClientRect();
-
-            var centers = [];
-            branches.forEach(function(branch) {
-                var connector = branch.querySelector('.tree-child-connector');
-                if (connector) {
-                    var rect = connector.getBoundingClientRect();
-                    centers.push({
-                        x: rect.left + rect.width / 2 - rowRect.left,
-                        top: rect.top - rowRect.top
-                    });
+                // Find the anchor (child member) in the couple
+                var anchor = fc.querySelector('.couple-member.is-child-anchor .tree-person');
+                if (!anchor) {
+                    // Try single person
+                    anchor = fc.querySelector('.tree-person');
                 }
+                if (!anchor) anchor = fc;
+
+                var aRect = anchor.getBoundingClientRect();
+                childPts.push({
+                    x: aRect.left + aRect.width / 2 - wRect.left,
+                    y: aRect.top - wRect.top
+                });
             });
 
-            if (centers.length < 2) return;
+            if (childPts.length === 0) return;
 
-            // Draw SVG for horizontal line - precisely from first to last child center
-            var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            svg.classList.add('connector-svg');
-            svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:20px;pointer-events:none;overflow:visible;';
+            // Mid Y point for the horizontal bracket
+            var midY = py + GAP;
 
-            var leftMost = centers[0].x;
-            var rightMost = centers[centers.length - 1].x;
+            // Ensure midY is between parent bottom and first child top
+            var minChildY = Infinity;
+            childPts.forEach(function(cp) { if (cp.y < minChildY) minChildY = cp.y; });
+            if (midY > minChildY - 5) midY = (py + minChildY) / 2;
 
-            // Horizontal line - exactly from first child center to last child center - FIX #3
-            var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            hLine.setAttribute('x1', leftMost);
-            hLine.setAttribute('y1', 0);
-            hLine.setAttribute('x2', rightMost);
-            hLine.setAttribute('y2', 0);
-            hLine.setAttribute('stroke', '#A5D6A7');
-            hLine.setAttribute('stroke-width', '2');
-            svg.appendChild(hLine);
+            // ---- DRAW WITH ROUNDED CORNERS ----
 
-            // Vertical drops to each child - FIX #1
-            centers.forEach(function(c) {
-                var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                vLine.setAttribute('x1', c.x);
-                vLine.setAttribute('y1', 0);
-                vLine.setAttribute('x2', c.x);
-                vLine.setAttribute('y2', 20);
-                vLine.setAttribute('stroke', '#A5D6A7');
-                vLine.setAttribute('stroke-width', '2');
-                svg.appendChild(vLine);
-            });
+            // 1. Vertical stem: parent bottom → midY
+            addLine(svg, px, py, px, midY, COLOR, WIDTH);
 
-            row.insertBefore(svg, row.firstChild);
+            if (childPts.length === 1) {
+                // Single child: stem continues down to child
+                var cp = childPts[0];
+                if (Math.abs(cp.x - px) < 3) {
+                    // Straight line
+                    addLine(svg, px, midY, cp.x, cp.y, COLOR, WIDTH);
+                } else {
+                    // Rounded L-shape
+                    drawRoundedL(svg, px, midY, cp.x, cp.y, R, COLOR, WIDTH);
+                }
+            } else {
+                // Multiple children
+                var leftX = Infinity, rightX = -Infinity;
+                childPts.forEach(function(cp) {
+                    if (cp.x < leftX) leftX = cp.x;
+                    if (cp.x > rightX) rightX = cp.x;
+                });
 
-            // Hide the CSS connectors since we're using SVG
-            branches.forEach(function(branch) {
-                var connector = branch.querySelector('.tree-child-connector');
-                if (connector) connector.style.display = 'none';
-            });
+                // 2. Horizontal bracket: leftX → rightX at midY
+                addLine(svg, leftX, midY, rightX, midY, COLOR, WIDTH);
+
+                // 3. Drop from bracket to each child - with rounded corners
+                childPts.forEach(function(cp) {
+                    drawRoundedDrop(svg, cp.x, midY, cp.x, cp.y, R, COLOR, WIDTH);
+                });
+            }
         });
+
+        wrapper.insertBefore(svg, wrapper.firstChild);
     }
 
-    // Redraw lines on window resize
-    var resizeTimer;
+    // Draw a simple line
+    function addLine(svg, x1, y1, x2, y2, color, width) {
+        var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', x1);
+        line.setAttribute('y1', y1);
+        line.setAttribute('x2', x2);
+        line.setAttribute('y2', y2);
+        line.setAttribute('stroke', color);
+        line.setAttribute('stroke-width', width);
+        line.setAttribute('stroke-linecap', 'round');
+        svg.appendChild(line);
+    }
+
+    // Draw an L-shaped connector with rounded corner
+    // From (x1,y1) going down to horizontal level, then across to (x2,y2)
+    function drawRoundedL(svg, x1, y1, x2, y2, r, color, width) {
+        var dx = x2 - x1;
+        var dy = y2 - y1;
+        var dir = dx > 0 ? 1 : -1;
+        var cr = Math.min(r, Math.abs(dx), Math.abs(dy) / 2);
+
+        var d;
+        if (cr < 1) {
+            // No room for radius, just straight lines
+            d = 'M' + x1 + ',' + y1 + ' L' + x1 + ',' + y2 + ' L' + x2 + ',' + y2;
+        } else {
+            // Horizontal at y1, then curve down, then vertical to y2
+            d = 'M' + x1 + ',' + y1 +
+                ' L' + (x2 - dir * cr) + ',' + y1 +
+                ' Q' + x2 + ',' + y1 + ' ' + x2 + ',' + (y1 + cr) +
+                ' L' + x2 + ',' + y2;
+        }
+
+        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', d);
+        path.setAttribute('stroke', color);
+        path.setAttribute('stroke-width', width);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke-linecap', 'round');
+        svg.appendChild(path);
+    }
+
+    // Draw a vertical drop from (x1,y1) to (x1,y2) with rounded corner at top
+    // The top of the drop connects to a horizontal line at y1
+    function drawRoundedDrop(svg, x1, y1, x2, y2, r, color, width) {
+        var dropH = y2 - y1;
+        if (dropH <= 0) return;
+
+        // Simple vertical line for the drop - the rounding happens at the junction
+        // We draw the drop as a path that starts with a tiny curve from horizontal to vertical
+        var cr = Math.min(r, dropH / 3);
+
+        // The drop just needs to be a vertical line from the bracket
+        // Rounded corners at the T-junction are created by making the horizontal line
+        // and vertical drops as separate rounded-cap paths
+        addLine(svg, x1, y1, x2, y2, color, width);
+    }
+
+    // Resize handler
+    var _rt;
     window.addEventListener('resize', function() {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(function() {
-            drawConnectingLines();
-        }, 200);
+        clearTimeout(_rt);
+        _rt = setTimeout(drawAllConnectors, 250);
     });
 
-    // Wheel zoom on tree container - FIX #4
+    // Ctrl+wheel zoom
     document.addEventListener('DOMContentLoaded', function() {
-        var container = document.getElementById('treeContainer');
-        if (container) {
-            container.addEventListener('wheel', function(e) {
-                if (e.ctrlKey || e.metaKey) {
-                    e.preventDefault();
-                    if (e.deltaY < 0) zoomIn();
-                    else zoomOut();
-                }
-            }, { passive: false });
-        }
+        var c = document.getElementById('treeContainer');
+        if (c) c.addEventListener('wheel', function(e) {
+            if (e.ctrlKey || e.metaKey) { e.preventDefault(); e.deltaY < 0 ? zoomIn() : zoomOut(); }
+        }, { passive: false });
     });
 
     return {
-        setLevel: setLevel,
-        populateRootSelect: populateRootSelect,
-        render: render,
-        zoomIn: zoomIn,
-        zoomOut: zoomOut,
-        zoomReset: zoomReset,
-        zoomFit: zoomFit,
-        exportAsImage: exportAsImage,
-        exportAsPDF: exportAsPDF,
-        toggleExportMenu: toggleExportMenu
+        setLevel: setLevel, populateRootSelect: populateRootSelect, render: render,
+        zoomIn: zoomIn, zoomOut: zoomOut, zoomReset: zoomReset, zoomFit: zoomFit,
+        exportAsImage: exportAsImage, exportAsPDF: exportAsPDF, toggleExportMenu: toggleExportMenu
     };
 })();

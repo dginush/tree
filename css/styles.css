@@ -634,3 +634,310 @@ body.viewer-mode .member-actions .btn-outline{display:inline-flex!important}body
 .export-dropdown-content button:hover {
     background: #F1F8E9;
 }
+/* ============================================
+   Tree Layout - REWRITTEN for SVG connectors
+   ============================================ */
+.tree-family-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.tree-couple {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    position: relative;
+    z-index: 2;
+}
+
+.couple-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 6px;
+    position: relative;
+    align-self: center;
+}
+
+.couple-line {
+    width: 35px;
+    height: 2px;
+    background: #E91E63;
+}
+
+.couple-line.ex-line {
+    background: none;
+    border-top: 2px dashed #f44336;
+    height: 0;
+}
+
+.couple-line.married-line {
+    background: #E91E63;
+}
+
+.couple-symbol {
+    font-size: 0.7em;
+    margin-top: 2px;
+}
+
+.couple-pair {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.couple-member {
+    position: relative;
+}
+
+.couple-spacer {
+    width: 15px;
+}
+
+/* Person Node */
+.tree-person {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 12px 8px;
+    border-radius: 12px;
+    background: #fff;
+    border: 2px solid #e0e0e0;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 95px;
+    max-width: 125px;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    z-index: 2;
+}
+
+.tree-person:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    z-index: 10;
+}
+
+.tree-person.male {
+    border-color: #90CAF9;
+    background: linear-gradient(135deg, #fff 0%, #E3F2FD 100%);
+}
+
+.tree-person.female {
+    border-color: #F48FB1;
+    background: linear-gradient(135deg, #fff 0%, #FCE4EC 100%);
+}
+
+.tree-person.deceased {
+    opacity: 0.7;
+    border-style: dashed;
+}
+
+.tree-person.connectable {
+    cursor: grab;
+    border-color: #4CAF50;
+}
+
+.tree-person-photo {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-bottom: 6px;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+.tree-person-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tree-person-emoji {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8em;
+    border-radius: 50%;
+}
+
+.tree-person-name {
+    font-weight: 700;
+    font-size: 0.82em;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.tree-person-date {
+    font-size: 0.7em;
+    color: #888;
+    margin-top: 1px;
+}
+
+.tree-person-age {
+    font-size: 0.7em;
+    color: #888;
+    margin-top: 2px;
+}
+
+/* Children layout */
+.tree-children-area {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 6px;
+    padding-top: 44px; /* Space for SVG connectors (GAP*2) */
+    position: relative;
+    z-index: 1;
+}
+
+.tree-child-branch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Family group separator - space between different families' children */
+.family-group-separator {
+    width: 30px;
+    flex-shrink: 0;
+}
+
+/* SVG connector overlay */
+.tree-svg-connectors {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Tree container */
+.tree-container {
+    overflow: auto;
+    padding: 20px;
+    min-height: 400px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: #FAFFF5;
+    position: relative;
+}
+
+.tree-wrapper {
+    display: inline-flex;
+    justify-content: center;
+    min-width: 100%;
+    padding: 20px 40px;
+    transform-origin: top center;
+    transition: transform 0.3s ease;
+    position: relative;
+}
+
+/* ============================================
+   Zoom Controls
+   ============================================ */
+.tree-zoom-controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-left: 10px;
+}
+
+.zoom-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 2px solid var(--primary);
+    background: #fff;
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 1.1em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.zoom-btn:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+.zoom-level-display {
+    font-size: 0.82em;
+    font-weight: 600;
+    color: var(--text-muted);
+    min-width: 40px;
+    text-align: center;
+}
+
+/* ============================================
+   Export Dropdown
+   ============================================ */
+.export-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.export-dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    min-width: 160px;
+    z-index: 100;
+    padding: 6px;
+    margin-top: 4px;
+}
+
+.export-dropdown-content.show {
+    display: block;
+}
+
+.export-dropdown-content button {
+    width: 100%;
+    padding: 8px 14px;
+    background: none;
+    border: none;
+    font-family: 'Heebo', sans-serif;
+    font-size: 0.88em;
+    text-align: right;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+}
+
+.export-dropdown-content button:hover {
+    background: #F1F8E9;
+}
+
+/* Hide old CSS connector elements - all drawing is via SVG now */
+.tree-vertical-line,
+.tree-child-connector,
+.tree-child-drop,
+.tree-vertical-stem,
+.tree-horizontal-line {
+    display: none !important;
+}
+
+/* Remove old ::before/::after connectors */
+.tree-children::before,
+.tree-children.multiple::before,
+.tree-child-branch::before,
+.couple-member.is-child-anchor::before {
+    display: none !important;
+}

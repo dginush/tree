@@ -126,12 +126,11 @@ style="text-transform:uppercase;text-align:center;font-size:1.4em;letter-spacing
 <!-- Tree -->
 <div id="page-tree" class="page">
 <div class="card tree-page-card"><div class="card-header"><div class="card-title">🌴 עץ</div>
-<!-- Export Button - FIX #5 -->
 <div class="export-dropdown">
     <button class="btn btn-outline btn-sm" onclick="TreeRenderer.toggleExportMenu()">📤 ייצוא</button>
     <div class="export-dropdown-content" id="exportDropdownContent">
-        <button onclick="TreeRenderer.exportAsImage()">🖼️ ייצוא כתמונה (PNG)</button>
-        <button onclick="TreeRenderer.exportAsPDF()">📄 ייצוא כ-PDF</button>
+        <button onclick="TreeRenderer.exportAsImage()">🖼️ תמונה (PNG)</button>
+        <button onclick="TreeRenderer.exportAsPDF()">📄 PDF</button>
     </div>
 </div>
 </div>
@@ -148,7 +147,6 @@ style="text-transform:uppercase;text-align:center;font-size:1.4em;letter-spacing
 <label class="checkbox-label"><input type="checkbox" id="showDivorced" checked onchange="TreeRenderer.render()"> 💔</label>
 <label class="checkbox-label"><input type="checkbox" id="showDeceased" checked onchange="TreeRenderer.render()"> 🕯️</label>
 <div class="toolbar-divider"></div>
-<!-- Zoom Controls - FIX #4 -->
 <div class="tree-zoom-controls">
     <button class="zoom-btn" onclick="TreeRenderer.zoomOut()" title="הקטנה">−</button>
     <span class="zoom-level-display" id="zoomLevelDisplay">100%</span>
