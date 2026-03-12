@@ -194,6 +194,16 @@ const TreeRenderer = (() => {
                     (c.parentId2 && allParentIds.indexOf(c.parentId2) !== -1);
             });
 
+            // מיון ילדים לפי גיל - בכור בימין (ראשון במערך)
+            children.sort(function(a, b) {
+                var da = a.birthDate ? a.birthDate.split('/') : null;
+                var db = b.birthDate ? b.birthDate.split('/') : null;
+                var dateA = da && da.length === 3 ? new Date(parseInt(da[2]), parseInt(da[1]) - 1, parseInt(da[0])) : new Date(9999, 0, 1);
+                var dateB = db && db.length === 3 ? new Date(parseInt(db[2]), parseInt(db[1]) - 1, parseInt(db[0])) : new Date(9999, 0, 1);
+                return dateA - dateB;
+            });
+
+            var childGroups = [];
             var childGroups = [];
             spouses.forEach(function (sp) {
                 var spCh = children.filter(function (c) {
