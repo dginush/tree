@@ -2351,3 +2351,104 @@ body.dark-mode .share-member-row {
     border: 1px solid #ddd;
   }
 }
+/* ============================================
+   Mobile Fix - Header & Footer centering
+   ============================================ */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    align-items: center;
+    text-align: center;
+  }
+  .logo {
+    font-size: 1.1em;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .tree-name-header {
+    display: block;
+    width: 100%;
+    text-align: center;
+    font-size: 0.65em;
+  }
+  .header-actions {
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+  }
+  .header-btn {
+    padding: 5px 10px;
+    font-size: 0.75em;
+  }
+  .sync-status {
+    font-size: 0.72em;
+  }
+  .nav-tabs {
+    padding: 0 5px;
+    gap: 0;
+    justify-content: center;
+  }
+  .nav-tab {
+    padding: 8px 8px;
+    font-size: 0.72em;
+    gap: 2px;
+  }
+  .main {
+    padding: 10px 8px 40px 8px;
+  }
+  .stats-bar {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .members-grid {
+    grid-template-columns: 1fr;
+  }
+  .form-grid-2,
+  .view-details {
+    grid-template-columns: 1fr;
+  }
+  .modal {
+    padding: 16px;
+    margin: 8px;
+    border-radius: 16px;
+  }
+  .modal-overlay {
+    padding: 8px;
+  }
+  .card {
+    padding: 14px;
+    border-radius: 14px;
+  }
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .calendar-nav {
+    justify-content: center;
+    gap: 4px;
+  }
+  .calendar-cell {
+    min-height: 55px;
+  }
+  .bday-chip-name {
+    max-width: 45px;
+  }
+  .year-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .tree-toolbar {
+    justify-content: center;
+    gap: 8px;
+  }
+  .tree-zoom-controls {
+    margin-left: 0;
+  }
+}
