@@ -1,5 +1,8 @@
 @import url("https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap");
 
+/* ============================================
+   CSS Variables
+   ============================================ */
 :root {
   --primary: #2e7d32;
   --primary-light: #4caf50;
@@ -21,14 +24,11 @@
   --gradient-accent: linear-gradient(135deg, #ff8f00, #ffb300);
   --radius: 14px;
   --radius-sm: 10px;
-  --tree-line-color: #4caf50;
-  --tree-line-width: 2px;
-  --tree-v-gap: 28px;
-  --tree-h-gap: 16px;
-  --tree-group-gap: 40px;
-  --tree-line-radius: 8px;
 }
 
+/* ============================================
+   Reset & Base
+   ============================================ */
 * {
   margin: 0;
   padding: 0;
@@ -49,6 +49,67 @@ body {
 ::-webkit-scrollbar-thumb {
   background: var(--primary-light);
   border-radius: 4px;
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes sway {
+  0%,
+  100% {
+    transform: rotate(-5deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 /* ============================================
@@ -73,33 +134,12 @@ body {
   animation: slideUp 0.5s ease;
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(40px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .login-logo {
   font-size: 4em;
   text-align: center;
   margin-bottom: 8px;
   animation: sway 3s ease-in-out infinite;
 }
-@keyframes sway {
-  0%,
-  100% {
-    transform: rotate(-5deg);
-  }
-  50% {
-    transform: rotate(5deg);
-  }
-}
-
 .login-title {
   text-align: center;
   font-size: 2em;
@@ -286,7 +326,7 @@ body {
 }
 
 /* ============================================
-   Header
+   Header & Navigation
    ============================================ */
 .header {
   background: var(--gradient);
@@ -339,15 +379,6 @@ body {
 .sync-dot.syncing {
   background: #ffd740;
   animation: blink 1s infinite;
-}
-@keyframes blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.3;
-  }
 }
 
 .header-btn {
@@ -455,9 +486,6 @@ body {
   background: #fff0f0;
 }
 
-/* ============================================
-   Navigation Tabs
-   ============================================ */
 .nav-tabs {
   display: flex;
   background: rgba(0, 0, 0, 0.1);
@@ -496,28 +524,12 @@ body {
   padding: 22px;
   padding-bottom: 36px;
 }
-.main {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 22px;
-  padding-bottom: 36px;
-}
 .page {
   display: none;
 }
 .page.active {
   display: block;
   animation: fadeIn 0.35s ease;
-}
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .stats-bar {
@@ -557,7 +569,6 @@ body {
   font-size: 0.82em;
   color: var(--text-muted);
 }
-
 .dashboard-grid {
   display: grid;
   grid-template-columns: 1.5fr 1fr;
@@ -792,7 +803,6 @@ body {
   opacity: 1;
 }
 
-/* Hebrew date row */
 .hebrew-date-row {
   display: flex;
   align-items: center;
@@ -902,24 +912,9 @@ body {
   font-weight: 700;
   color: #fff;
 }
-.member-card.male .initials {
-  background: var(--male);
-}
-.member-card.female .initials {
-  background: var(--female);
-}
 .member-name {
   font-size: 1.08em;
   font-weight: 700;
-}
-.relation-badge {
-  display: inline-flex;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 0.76em;
-  font-weight: 600;
-  background: #e8f5e9;
-  color: #2e7d32;
 }
 .member-details {
   font-size: 0.85em;
@@ -1273,15 +1268,6 @@ body {
   background: #e3f2fd;
   color: #1565c0;
 }
-@keyframes pulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-}
 
 .year-grid {
   display: grid;
@@ -1555,16 +1541,6 @@ body {
 .toast.warning {
   border-right-color: #ff9800;
 }
-@keyframes slideInLeft {
-  from {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
 
 /* ============================================
    Empty State
@@ -1770,7 +1746,7 @@ body.viewer-mode #connectModeBtn {
 }
 
 /* ============================================
-   TREE PAGE - Toolbar
+   Tree Page - Toolbar & Controls
    ============================================ */
 .tree-page-card {
   padding: 18px;
@@ -1836,7 +1812,6 @@ body.viewer-mode #connectModeBtn {
   color: #1565c0;
 }
 
-/* Zoom Controls */
 .tree-zoom-controls {
   display: flex;
   gap: 6px;
@@ -1870,7 +1845,6 @@ body.viewer-mode #connectModeBtn {
   text-align: center;
 }
 
-/* Export Dropdown */
 .export-dropdown {
   position: relative;
   display: inline-block;
@@ -1911,9 +1885,8 @@ body.viewer-mode #connectModeBtn {
 }
 
 /* ============================================
-   TREE - Clean Layout with JS-drawn connectors
+   Tree Layout & Connectors
    ============================================ */
-
 .tree-container {
   overflow: auto;
   padding: 20px;
@@ -1922,6 +1895,13 @@ body.viewer-mode #connectModeBtn {
   border-radius: var(--radius);
   background: #fafff5;
   position: relative;
+  cursor: grab;
+}
+.tree-container:active {
+  cursor: grabbing;
+}
+.tree-container .tf-person {
+  cursor: pointer;
 }
 
 .tree-wrapper {
@@ -1929,19 +1909,16 @@ body.viewer-mode #connectModeBtn {
   justify-content: center;
   min-width: 100%;
   padding: 30px 50px;
-  transform-origin: top center;
+  transform-origin: top right;
   transition: transform 0.3s ease;
 }
 
-/* Tree node structure */
 .tf-tree {
   display: flex;
   flex-direction: column;
   align-items: center;
   position: relative;
 }
-
-/* Node content (the card or couple) */
 .tf-nc {
   display: flex;
   justify-content: center;
@@ -1949,16 +1926,13 @@ body.viewer-mode #connectModeBtn {
   z-index: 2;
 }
 
-/* Connector area - sits between parent and children row */
 .tf-connector-area {
   position: relative;
   width: 100%;
   min-height: 30px;
   z-index: 1;
-  /* Lines are drawn here by JS as absolutely positioned children */
 }
 
-/* Children row */
 .tf-children-row {
   display: flex;
   justify-content: center;
@@ -1966,8 +1940,6 @@ body.viewer-mode #connectModeBtn {
   position: relative;
   z-index: 2;
 }
-
-/* Individual branch */
 .tf-branch {
   display: flex;
   flex-direction: column;
@@ -1975,52 +1947,43 @@ body.viewer-mode #connectModeBtn {
   position: relative;
   padding: 0 10px;
 }
-
-/* Family group separator */
 .tf-group-gap {
   width: 35px;
   flex-shrink: 0;
 }
 
-/* Couple display */
 .tf-couple {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0;
 }
-
 .tf-couple-member {
   position: relative;
 }
-
 .tf-couple-link {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 0 5px;
 }
-
 .tf-couple-line {
   width: 30px;
   height: 2px;
   background: #e91e63;
   border-radius: 1px;
 }
-
 .tf-couple-line.tf-ex {
   background: none;
   border-top: 2px dashed #f44336;
   height: 0;
 }
-
 .tf-couple-heart {
   font-size: 0.65em;
   margin-top: 2px;
   line-height: 1;
 }
 
-/* Person card */
 .tf-person {
   display: flex;
   flex-direction: column;
@@ -2037,28 +2000,23 @@ body.viewer-mode #connectModeBtn {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   z-index: 2;
 }
-
 .tf-person:hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
   z-index: 10;
 }
-
 .tf-person.male {
   border-color: #90caf9;
   background: linear-gradient(135deg, #fff 0%, #e3f2fd 100%);
 }
-
 .tf-person.female {
   border-color: #f48fb1;
   background: linear-gradient(135deg, #fff 0%, #fce4ec 100%);
 }
-
 .tf-person.deceased {
   opacity: 0.7;
   border-style: dashed;
 }
-
 .tf-person.connectable {
   cursor: grab;
   border-color: #4caf50;
@@ -2073,13 +2031,11 @@ body.viewer-mode #connectModeBtn {
   border: 2px solid #fff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
-
 .tf-photo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-
 .tf-emoji {
   width: 100%;
   height: 100%;
@@ -2089,114 +2045,226 @@ body.viewer-mode #connectModeBtn {
   font-size: 1.8em;
   border-radius: 50%;
 }
-
 .tf-name {
   font-weight: 700;
   font-size: 0.82em;
   text-align: center;
   line-height: 1.2;
 }
-
 .tf-date {
   font-size: 0.7em;
   color: #888;
   margin-top: 1px;
 }
-
 .tf-age {
   font-size: 0.7em;
   color: #888;
   margin-top: 2px;
 }
-
-/* Connector lines drawn by JS */
 .tf-line {
   pointer-events: none;
 }
 
-/* Zoom Controls */
-.tree-zoom-controls {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  margin-left: 10px;
+/* ============================================
+   Dark Mode
+   ============================================ */
+body.dark-mode {
+  --bg: #1a1a2e;
+  --text: #e0e0e0;
+  --text-light: #b0b0b0;
+  --text-muted: #888;
+  --border: #333;
 }
 
-.zoom-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 2px solid var(--primary);
-  background: #fff;
-  color: var(--primary);
-  font-weight: 700;
-  font-size: 1.1em;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
+body.dark-mode .card,
+body.dark-mode .modal,
+body.dark-mode .member-card,
+body.dark-mode .event-card,
+body.dark-mode .user-dropdown,
+body.dark-mode .login-card,
+body.dark-mode .tree-select-card {
+  background: #16213e;
+  color: #e0e0e0;
 }
 
-.zoom-btn:hover {
-  background: var(--primary);
+body.dark-mode .header {
+  background: linear-gradient(135deg, #0f3460, #16213e);
+}
+body.dark-mode .nav-tabs {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .form-input,
+body.dark-mode .form-select,
+body.dark-mode .form-textarea,
+body.dark-mode .search-input {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  border-color: #444;
+}
+
+body.dark-mode .form-input:focus,
+body.dark-mode .form-select:focus,
+body.dark-mode .form-textarea:focus {
+  border-color: #4caf50;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+}
+
+body.dark-mode .stat-card {
+  background: #16213e;
+}
+body.dark-mode .tree-container {
+  background: #0f0f23;
+  border-color: #333;
+}
+
+body.dark-mode .tf-person {
+  background: #16213e;
+  border-color: #444;
+  color: #e0e0e0;
+}
+body.dark-mode .tf-person.male {
+  background: linear-gradient(135deg, #16213e 0%, #1a2744 100%);
+  border-color: #5a9bd5;
+}
+body.dark-mode .tf-person.female {
+  background: linear-gradient(135deg, #16213e 0%, #2d1a2e 100%);
+  border-color: #d5739b;
+}
+body.dark-mode .tf-name {
+  color: #e0e0e0;
+}
+body.dark-mode .tf-date,
+body.dark-mode .tf-age {
+  color: #aaa;
+}
+
+body.dark-mode .calendar-cell {
+  border-color: #333;
+  background: #16213e;
+}
+body.dark-mode .calendar-cell.empty {
+  background: #111;
+}
+body.dark-mode .calendar-cell.today {
+  background: #2a2a0a;
+  border-color: #ffd54f;
+}
+body.dark-mode .calendar-cell.has-birthday {
+  background: #2a2510;
+}
+body.dark-mode .calendar-day-header {
+  background: #1a3a1a;
+  color: #a0d0a0;
+}
+
+body.dark-mode .birthday-summary {
+  background: #111;
+}
+body.dark-mode .summary-item {
+  background: #16213e;
+}
+body.dark-mode .summary-item:hover {
+  background: #1a2744;
+}
+body.dark-mode .view-detail,
+body.dark-mode .bday-detail-item {
+  background: #1a1a2e;
+}
+
+body.dark-mode .filter-chip {
+  background: #16213e;
+  border-color: #444;
+  color: #e0e0e0;
+}
+body.dark-mode .btn-outline {
+  color: #4caf50;
+  border-color: #4caf50;
+}
+body.dark-mode .btn-outline:hover {
+  background: #4caf50;
   color: #fff;
 }
 
-.zoom-level-display {
-  font-size: 0.82em;
-  font-weight: 600;
-  color: var(--text-muted);
-  min-width: 40px;
-  text-align: center;
+body.dark-mode .modal-overlay {
+  background: rgba(0, 0, 0, 0.75);
+}
+body.dark-mode .modal-header,
+body.dark-mode .card-header {
+  border-bottom-color: #333;
+}
+body.dark-mode .modal-footer {
+  border-top-color: #333;
+}
+body.dark-mode .member-actions {
+  border-top-color: #333;
 }
 
-/* Export Dropdown */
-.export-dropdown {
-  position: relative;
-  display: inline-block;
+body.dark-mode .level-btn,
+body.dark-mode .zoom-btn {
+  background: #1a1a2e;
+  color: #4caf50;
+  border-color: #4caf50;
+}
+body.dark-mode .level-btn.active,
+body.dark-mode .level-btn:hover,
+body.dark-mode .zoom-btn:hover {
+  background: #4caf50;
+  color: #fff;
 }
 
-.export-dropdown-content {
-  display: none;
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-  min-width: 170px;
-  z-index: 100;
-  padding: 6px;
-  margin-top: 4px;
+body.dark-mode .toast {
+  background: #16213e;
+  color: #e0e0e0;
+}
+body.dark-mode .year-month-card {
+  background: #16213e;
+  border-color: #444;
+}
+body.dark-mode .list-birthday-item {
+  background: #16213e;
+}
+body.dark-mode .export-dropdown-content {
+  background: #16213e;
+}
+body.dark-mode .export-dropdown-content button {
+  color: #e0e0e0;
+}
+body.dark-mode .export-dropdown-content button:hover {
+  background: #1a2744;
+}
+body.dark-mode .expandable-section {
+  border-top-color: #444;
 }
 
-.export-dropdown-content.show {
-  display: block;
+body.dark-mode .login-screen,
+body.dark-mode .tree-select-screen {
+  background: linear-gradient(135deg, #0a0a1a, #16213e, #1a1a2e);
 }
-
-.export-dropdown-content button {
-  width: 100%;
-  padding: 8px 14px;
-  background: none;
-  border: none;
-  font-family: "Heebo", sans-serif;
-  font-size: 0.88em;
-  text-align: right;
-  cursor: pointer;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text);
+body.dark-mode .login-field input {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  border-color: #444;
 }
-
-.export-dropdown-content button:hover {
-  background: #f1f8e9;
+body.dark-mode .login-divider::before {
+  background: #444;
+}
+body.dark-mode .login-divider span {
+  background: #16213e;
+}
+body.dark-mode .tree-select-option {
+  background: #1a1a2e;
+  border-color: #444;
+}
+body.dark-mode .confirm-dialog {
+  color: #e0e0e0;
+}
+body.dark-mode .share-member-row {
+  background: #1a1a2e;
 }
 
 /* ============================================
-   REMOVE ALL OLD TREE CONNECTOR STYLES
+   Remove Old Tree Connector Styles (Legacy)
    ============================================ */
 .tree-vertical-line,
 .tree-child-connector,
@@ -2209,7 +2277,6 @@ body.viewer-mode #connectModeBtn {
   display: none !important;
 }
 
-/* Remove ALL pseudo-element connectors */
 .tf-children::before,
 .tf-children::after,
 .tf-children.multiple::before,
@@ -2220,13 +2287,67 @@ body.viewer-mode #connectModeBtn {
   display: none !important;
   content: none !important;
 }
-/* סעיף 3: cursor grab על אזור העץ */
-.tree-container {
-  cursor: grab;
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 15px;
+  }
+  .main {
+    padding: 14px;
+  }
+  .form-grid-2,
+  .view-details {
+    grid-template-columns: 1fr;
+  }
+  .members-grid {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .stats-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .modal {
+    padding: 18px;
+  }
+  .tree-name-header {
+    display: none;
+  }
+  .year-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .calendar-cell {
+    min-height: 60px;
+  }
+  .bday-chip-name {
+    max-width: 50px;
+  }
+  .calendar-nav {
+    justify-content: center;
+  }
 }
-.tree-container:active {
-  cursor: grabbing;
-}
-.tree-container .tf-person {
-  cursor: pointer;
+
+@media print {
+  .header,
+  .nav-tabs,
+  .btn,
+  .search-container,
+  .tree-toolbar,
+  .events-filters,
+  .calendar-nav {
+    display: none !important;
+  }
+  .main {
+    padding: 0;
+  }
+  .card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
 }
