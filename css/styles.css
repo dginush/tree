@@ -2452,3 +2452,28 @@ body.dark-mode .share-member-row {
     margin-left: 0;
   }
 }
+/* Gap between parent and children */
+.tf-gap {
+  height: 40px;
+  width: 100%;
+}
+
+/* Overlay SVG */
+.tree-svg-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Tree container grab */
+.tree-container {
+  cursor: grab;
+}
+.tree-container:active {
+  cursor: grabbing;
+}
+.tree-container .tf-person {
+  cursor: pointer;
+}
