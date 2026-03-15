@@ -2220,3 +2220,13 @@ body.viewer-mode #connectModeBtn {
   display: none !important;
   content: none !important;
 }
+/* סעיף 3: cursor grab על אזור העץ */
+.tree-container {
+  cursor: grab;
+}
+.tree-container:active {
+  cursor: grabbing;
+}
+.tree-container .tf-person {
+  cursor: pointer;
+}

@@ -594,7 +594,14 @@ const TreeRenderer = (() => {
 
     var treeRect = treeEl.getBoundingClientRect();
     var parentBottom = getParentBottom(ncEl, treeRect);
-
+    // סעיף 1: חישוב נקודות חיבור ספציפיות לכל ילד
+    var ms = App.getMembers();
+    var perChildParentX = branches.map(function (branch) {
+      var personEl = branch.querySelector(".tf-person[data-member-id]");
+      if (!personEl) return null;
+      var specificX = getParentXForChild(ncEl, personEl, ms);
+      return specificX;
+    });
     var childTops = branches.map(function (branch) {
       return getChildTop(branch, treeRect);
     });
@@ -721,7 +728,7 @@ const TreeRenderer = (() => {
     area.appendChild(svg);
   }
 
-  function getParentBottom(ncEl, treeRect, childBranches, ms) {
+  function getParentBottom(ncEl, treeRect) {
     var couple = ncEl.querySelector(".tf-couple");
     var el;
     if (couple) {
@@ -735,6 +742,39 @@ const TreeRenderer = (() => {
       x: r.left + r.width / 2,
       y: r.bottom,
     };
+  }
+
+  // סעיף 1: מציאת X ספציפי להורה ביולוגי של ילד
+  function getParentXForChild(ncEl, childPersonEl, ms) {
+    var couple = ncEl.querySelector(".tf-couple");
+    if (!couple) return null; // אדם בודד - ברירת מחדל
+
+    var memberId = childPersonEl.getAttribute("data-member-id");
+    if (!memberId) return null;
+    var childMember = null;
+    for (var i = 0; i < ms.length; i++) {
+      if (ms[i].id === memberId) {
+        childMember = ms[i];
+        break;
+      }
+    }
+    if (!childMember) return null;
+
+    // אם יש שני הורים - חיבור לאמצע (ברירת מחדל)
+    if (childMember.parentId && childMember.parentId2) return null;
+
+    // רק הורה אחד - חיבור ישירות אליו
+    var singleParentId = childMember.parentId || childMember.parentId2;
+    if (!singleParentId) return null;
+
+    var parentEl = couple.querySelector(
+      '.tf-couple-member[data-person-id="' + singleParentId + '"] .tf-person'
+    );
+    if (parentEl) {
+      var pr = parentEl.getBoundingClientRect();
+      return pr.left + pr.width / 2;
+    }
+    return null;
   }
 
   // חישוב נקודת חיבור ספציפית לילד - אם יש לו רק הורה אחד, מתחבר אליו
@@ -824,16 +864,12 @@ const TreeRenderer = (() => {
     parent.appendChild(d);
   }
 
-  function addRoundedCorners(area, parentX, childXs, midY) {
-    // Replace sharp corners with SVG rounded corners
-    // Clear the simple lines and redraw with SVG
-    // Remove the simple line divs we just added
+  function addRoundedCorners(area, parentX, childXs, midY, perChildParentX) {
     var oldLines = area.querySelectorAll(".tf-line");
     oldLines.forEach(function (l) {
       l.remove();
     });
 
-    // Create SVG
     var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("class", "tf-line");
     svg.style.cssText =
@@ -846,52 +882,97 @@ const TreeRenderer = (() => {
     var paths = "";
     var r = CORNER_R;
 
-    if (childXs.length === 1) {
-      var cx = childXs[0];
-      if (Math.abs(cx - parentX) < 3) {
-        // Straight vertical line
-        paths += svgLine(parentX, 0, parentX, V_GAP);
+    // סעיף 1: בדוק אם יש ילדים עם הורה ספציפי
+    var hasSpecificParent = false;
+    if (perChildParentX) {
+      for (var i = 0; i < perChildParentX.length; i++) {
+        if (perChildParentX[i] !== null) {
+          hasSpecificParent = true;
+          break;
+        }
+      }
+    }
+
+    if (!hasSpecificParent) {
+      // התנהגות רגילה - כל הילדים מאותו מקור
+      if (childXs.length === 1) {
+        var cx = childXs[0];
+        if (Math.abs(cx - parentX) < 3) {
+          paths += svgLine(parentX, 0, parentX, V_GAP);
+        } else {
+          paths += svgPathLShape(parentX, 0, cx, V_GAP, midY, r);
+        }
       } else {
-        // L-shape with rounded corner
-        paths += svgPathLShape(parentX, 0, cx, V_GAP, midY, r);
+        var leftX = Math.min.apply(null, childXs);
+        var rightX = Math.max.apply(null, childXs);
+        var barLeft = Math.min(leftX, parentX);
+        var barRight = Math.max(rightX, parentX);
+
+        paths += svgLine(parentX, 0, parentX, midY);
+        paths += svgLine(barLeft, midY, barRight, midY);
+
+        childXs.forEach(function (cx) {
+          if (Math.abs(cx - parentX) < 3) {
+            paths += svgLine(cx, midY, cx, V_GAP);
+          } else {
+            paths += svgCornerDrop(
+              cx,
+              midY,
+              V_GAP,
+              r,
+              cx < parentX ? "left" : "right"
+            );
+          }
+        });
       }
     } else {
-      // Multiple children
-      var leftX = Math.min.apply(null, childXs);
-      var rightX = Math.max.apply(null, childXs);
+      // סעיף 1: ילדים עם הורים ספציפיים
+      var areaRect = area.getBoundingClientRect();
+      var groups = {};
 
-      // Ensure horizontal bar extends to parent if needed
-      var barLeft = Math.min(leftX, parentX);
-      var barRight = Math.max(rightX, parentX);
-
-      // Parent stem down to midY
-      paths += svgLine(parentX, 0, parentX, midY);
-
-      // Horizontal bar at midY
-      paths += svgLine(barLeft, midY, barRight, midY);
-
-      // Each child: vertical drop from midY with rounded corner
-      childXs.forEach(function (cx) {
-        if (Math.abs(cx - parentX) < 3) {
-          // Directly under parent - straight line continues
-          paths += svgLine(cx, midY, cx, V_GAP);
+      for (var i = 0; i < childXs.length; i++) {
+        var px;
+        if (perChildParentX[i] !== null) {
+          px = perChildParentX[i] - areaRect.left;
         } else {
-          // Rounded corner from horizontal bar down
-          paths += svgCornerDrop(
-            cx,
-            midY,
-            V_GAP,
-            r,
-            cx < parentX ? "left" : "right"
-          );
+          px = parentX;
         }
-      });
+        var key = Math.round(px);
+        if (!groups[key]) groups[key] = { parentX: px, childXs: [] };
+        groups[key].childXs.push(childXs[i]);
+      }
+
+      var groupKeys = Object.keys(groups);
+      for (var g = 0; g < groupKeys.length; g++) {
+        var grp = groups[groupKeys[g]];
+        var gpx = grp.parentX;
+
+        paths += svgLine(gpx, 0, gpx, midY);
+
+        if (grp.childXs.length === 1) {
+          var cx = grp.childXs[0];
+          if (Math.abs(cx - gpx) < 3) {
+            paths += svgLine(cx, midY, cx, V_GAP);
+          } else {
+            paths += svgLine(Math.min(gpx, cx), midY, Math.max(gpx, cx), midY);
+            paths += svgLine(cx, midY, cx, V_GAP);
+          }
+        } else {
+          var gLeft = Math.min.apply(null, grp.childXs);
+          var gRight = Math.max.apply(null, grp.childXs);
+          var gBarLeft = Math.min(gLeft, gpx);
+          var gBarRight = Math.max(gRight, gpx);
+          paths += svgLine(gBarLeft, midY, gBarRight, midY);
+          grp.childXs.forEach(function (cx) {
+            paths += svgLine(cx, midY, cx, V_GAP);
+          });
+        }
+      }
     }
 
     svg.innerHTML = paths;
     area.appendChild(svg);
   }
-
   function svgLine(x1, y1, x2, y2) {
     return (
       '<line x1="' +

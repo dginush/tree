@@ -135,6 +135,12 @@ const App = (() => {
     if (p === "tree") {
       TreeRenderer.populateRootSelect();
       TreeRenderer.render();
+      // סעיף 2: ציור מחדש של קווים אחרי שה-DOM מוצג
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          TreeRenderer.redrawConnectors();
+        });
+      });
     }
     if (p === "birthdays") BirthdayCalendar.render();
     if (p === "events") EventsManager.render();
@@ -162,6 +168,7 @@ const App = (() => {
     members = await FirebaseDB.getMembers();
     await EventsManager.load();
     renderDashboard();
+    PushNotifications.init();
     showToast("ברוך הבא! 🌳");
   }
 
@@ -235,17 +242,48 @@ const App = (() => {
   function handlePhotoUpload(e) {
     var f = e.target.files[0];
     if (!f) return;
-    if (f.size > 2 * 1024 * 1024) {
-      showToast("גדול מדי (מקסימום 2MB)", "error");
+    if (f.size > 5 * 1024 * 1024) {
+      showToast("גדול מדי (מקסימום 5MB)", "error");
       return;
     }
-    var r = new FileReader();
-    r.onload = function (ev) {
-      document.getElementById("photoPreviewImg").src = ev.target.result;
-      document.getElementById("photoPreviewImg").style.display = "";
-      document.getElementById("photoPlaceholder").style.display = "none";
+
+    // סעיף 4: דחיסת תמונה לפני שמירה
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      var img = new Image();
+      img.onload = function () {
+        var canvas = document.createElement("canvas");
+        var maxSize = 300; // פיקסלים - מספיק לתמונת פרופיל
+        var w = img.width,
+          h = img.height;
+
+        if (w > h) {
+          if (w > maxSize) {
+            h = Math.round((h * maxSize) / w);
+            w = maxSize;
+          }
+        } else {
+          if (h > maxSize) {
+            w = Math.round((w * maxSize) / h);
+            h = maxSize;
+          }
+        }
+
+        canvas.width = w;
+        canvas.height = h;
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+
+        // דחיסה ל-JPEG באיכות 0.7 - הרבה יותר קטן מ-Base64 מקורי
+        var compressed = canvas.toDataURL("image/jpeg", 0.7);
+
+        document.getElementById("photoPreviewImg").src = compressed;
+        document.getElementById("photoPreviewImg").style.display = "";
+        document.getElementById("photoPlaceholder").style.display = "none";
+      };
+      img.src = ev.target.result;
     };
-    r.readAsDataURL(f);
+    reader.readAsDataURL(f);
   }
 
   function openAddModal() {
