@@ -550,24 +550,215 @@ const TreeRenderer = (() => {
     var w = document.getElementById("treeWrapper");
     if (!w) return;
 
-    // הסרת SVG ישן
-    var oldSvg = w.querySelector(".tree-svg-overlay");
-    if (oldSvg) oldSvg.remove();
-
-    var wRect = w.getBoundingClientRect();
-    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("class", "tree-svg-overlay");
-    svg.style.cssText =
-      "position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible;";
-    svg.setAttribute("width", w.scrollWidth);
-    svg.setAttribute("height", w.scrollHeight);
-
-    var trees = w.querySelectorAll(".tf-tree");
-    trees.forEach(function (tree) {
-      drawTreeConnectors(tree, svg, wRect);
+    // הסרת כל SVG ישנים
+    w.querySelectorAll(".tree-svg-overlay").forEach(function (el) {
+      el.remove();
+    });
+    w.querySelectorAll(".tf-connector-svg").forEach(function (el) {
+      el.remove();
     });
 
-    w.appendChild(svg);
+    // לכל tf-tree - צייר SVG מקומי בתוך ה-tf-gap שלו
+    var trees = w.querySelectorAll(".tf-tree");
+    trees.forEach(function (tree) {
+      drawLocalConnector(tree);
+    });
+  }
+
+  function drawLocalConnector(treeEl) {
+    var nc = treeEl.querySelector(":scope > .tf-nc");
+    var gap = treeEl.querySelector(":scope > .tf-gap");
+    var childrenRow = treeEl.querySelector(":scope > .tf-children-row");
+    if (!nc || !gap || !childrenRow) return;
+
+    var branches = [];
+    for (var i = 0; i < childrenRow.children.length; i++) {
+      if (childrenRow.children[i].classList.contains("tf-branch")) {
+        branches.push(childrenRow.children[i]);
+      }
+    }
+    if (branches.length === 0) return;
+
+    // גובה ה-gap
+    var gapRect = gap.getBoundingClientRect();
+    var gapH = gapRect.height;
+    var gapW = gapRect.width;
+    var gapLeft = gapRect.left;
+    var gapTop = gapRect.top;
+
+    // מיקום ההורה - תחתית הזוג/אדם
+    var parentEl =
+      nc.querySelector(".tf-couple") || nc.querySelector(".tf-person");
+    if (!parentEl) return;
+    var pRect = parentEl.getBoundingClientRect();
+    var parentX = pRect.left + pRect.width / 2 - gapLeft;
+    var parentY = 0; // תחילת ה-gap
+
+    // מיקום כל ילד - חלק עליון
+    var ms = App.getMembers();
+    var parentPersonIds = [];
+    nc.querySelectorAll(".tf-person").forEach(function (p) {
+      var pid = p.getAttribute("data-member-id");
+      if (pid) parentPersonIds.push(pid);
+    });
+
+    var childPoints = branches
+      .map(function (branch) {
+        var firstTree = branch.querySelector(":scope > .tf-tree");
+        if (!firstTree) return null;
+        var firstNc = firstTree.querySelector(":scope > .tf-nc");
+        if (!firstNc) return null;
+
+        // מציאת הילד האמיתי
+        var childPerson = null;
+        var childMember = null;
+        var allPersons = firstNc.querySelectorAll(".tf-person");
+
+        allPersons.forEach(function (p) {
+          if (childPerson) return;
+          var mid = p.getAttribute("data-member-id");
+          if (!mid) return;
+          var member = null;
+          for (var j = 0; j < ms.length; j++) {
+            if (ms[j].id === mid) {
+              member = ms[j];
+              break;
+            }
+          }
+          if (!member) return;
+          var isChildOfParent = false;
+          if (
+            member.parentId &&
+            parentPersonIds.indexOf(member.parentId) !== -1
+          )
+            isChildOfParent = true;
+          if (
+            member.parentId2 &&
+            parentPersonIds.indexOf(member.parentId2) !== -1
+          )
+            isChildOfParent = true;
+          if (isChildOfParent) {
+            childPerson = p;
+            childMember = member;
+          }
+        });
+
+        if (!childPerson) {
+          childPerson = firstNc.querySelector(".tf-person");
+          if (childPerson) {
+            var mid = childPerson.getAttribute("data-member-id");
+            for (var j = 0; j < ms.length; j++) {
+              if (ms[j].id === mid) {
+                childMember = ms[j];
+                break;
+              }
+            }
+          }
+        }
+        if (!childPerson) return null;
+
+        var cRect = childPerson.getBoundingClientRect();
+        var cx = cRect.left + cRect.width / 2 - gapLeft;
+        var cy = gapH; // תחתית ה-gap
+
+        // חיבור להורה ספציפי
+        var specificParentX = null;
+        if (childMember && nc.querySelector(".tf-couple")) {
+          var hasP1 =
+            childMember.parentId &&
+            parentPersonIds.indexOf(childMember.parentId) !== -1;
+          var hasP2 =
+            childMember.parentId2 &&
+            parentPersonIds.indexOf(childMember.parentId2) !== -1;
+          if (hasP1 && !hasP2) {
+            var el = nc.querySelector(
+              '.tf-person[data-member-id="' + childMember.parentId + '"]'
+            );
+            if (el) {
+              var r = el.getBoundingClientRect();
+              specificParentX = r.left + r.width / 2 - gapLeft;
+            }
+          } else if (hasP2 && !hasP1) {
+            var el = nc.querySelector(
+              '.tf-person[data-member-id="' + childMember.parentId2 + '"]'
+            );
+            if (el) {
+              var r = el.getBoundingClientRect();
+              specificParentX = r.left + r.width / 2 - gapLeft;
+            }
+          }
+        }
+
+        return { x: cx, y: cy, specificParentX: specificParentX };
+      })
+      .filter(Boolean);
+
+    if (childPoints.length === 0) return;
+
+    // יצירת SVG בתוך ה-gap
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "tf-connector-svg");
+    svg.style.cssText =
+      "position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;";
+    svg.setAttribute("width", gapW);
+    svg.setAttribute("height", gapH);
+
+    var midY = gapH / 2;
+
+    // קיבוץ ילדים לפי הורה
+    var groups = {};
+    childPoints.forEach(function (cp) {
+      var px = cp.specificParentX !== null ? cp.specificParentX : parentX;
+      var key = Math.round(px);
+      if (!groups[key]) groups[key] = { parentX: px, children: [] };
+      groups[key].children.push(cp);
+    });
+
+    var groupKeys = Object.keys(groups);
+    groupKeys.forEach(function (key) {
+      var grp = groups[key];
+      var gpx = grp.parentX;
+
+      if (grp.children.length === 1) {
+        var cp = grp.children[0];
+        svg.appendChild(createSmoothPath(gpx, parentY, cp.x, cp.y, midY));
+      } else {
+        var r = RADIUS;
+        svg.appendChild(createLine(gpx, parentY, gpx, midY));
+        grp.children.forEach(function (cp) {
+          var cx = cp.x;
+          var cr = Math.min(
+            r,
+            Math.abs(cx - gpx) / 2,
+            Math.abs(cp.y - midY) / 2
+          );
+          if (Math.abs(cx - gpx) < 3) {
+            svg.appendChild(createLine(cx, midY, cx, cp.y));
+          } else {
+            var dir = cx > gpx ? 1 : -1;
+            var pathD = "M " + gpx + " " + midY;
+            pathD += " L " + (cx - cr * dir) + " " + midY;
+            pathD += " Q " + cx + " " + midY + " " + cx + " " + (midY + cr);
+            pathD += " L " + cx + " " + cp.y;
+            var el = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "path"
+            );
+            el.setAttribute("d", pathD);
+            el.setAttribute("stroke", LINE_COLOR);
+            el.setAttribute("stroke-width", LINE_WIDTH);
+            el.setAttribute("fill", "none");
+            el.setAttribute("stroke-linecap", "round");
+            el.setAttribute("stroke-linejoin", "round");
+            svg.appendChild(el);
+          }
+        });
+      }
+    });
+
+    // הכנסת ה-SVG בתוך ה-gap (לא כ-overlay)
+    gap.style.position = "relative";
+    gap.appendChild(svg);
   }
 
   function drawTreeConnectors(treeEl, svg, wRect) {
