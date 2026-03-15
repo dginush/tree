@@ -1,347 +1,599 @@
 <html lang="he" dir="rtl">
-<headd>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-</head>
-<body>
-<div id="loginScreen" class="login-screen">
-<div class="login-card">
-<div class="login-logo">🌳</div>
-<h1 class="login-title">עץ משפחתי</h1>
-<p class="login-subtitle">התחברו והתחילו לבנות את עץ המשפחה</p>
-<div id="loginForm">
-<div class="login-field"><label>📧 מייל</label><input type="email" id="loginEmail">
-</div>
-<div class="login-field"><label>🔑 סיסמה</label><input type="password" id="loginPassword">
-</div>
-<div id="loginError" class="login-error" style="display:none"></div>
-<button class="login-btn primary">📧 התחברות</button><button class="login-btn google">
-🔵 Google</button>
-<div class="login-divider"><span>חדש?</span></div>
-<button class="login-btn secondary">➕ הרשמה</button> </div>
-<div id="registerForm" style="display:none">
-<div class="login-field"><label>👤 שם</label><input type="text" id="registerName">
-</div>
-<div class="login-field"><label>📧 מייל</label><input type="email" id="registerEmail">
-</div>
-<div class="login-field"><label>🔑 סיסמה</label><input type="password" id="registerPassword">
-</div>
-<div class="login-field"><label>🔑 אימות</label><input type="password" id="registerPassword2">
-</div>
-<div id="registerError" class="login-error" style="display:none"></div>
-<button class="login-btn primary">➕ הרשמה</button><button class="login-btn secondary">
-← חזרה</button> </div>
-<button class="login-link">שכחתי סיסמה</button> </div>
-</div>
-<div id="treeSelectScreen" style="display:none">
-<div class="tree-select-screen">
-<div class="tree-select-card">
-<div style="font-size:3em; margin-bottom:10px">🌳</div>
-<h1>שלום, <span id="treeSelectUserName"></span>!</h1>
-<p style="color:#888; margin-bottom:30px">מה תרצו לעשות?</p>
-<div class="tree-select-option">
-<div class="tree-select-option-header"><span>🌱</span>
-<div><strong>עץ חדש</strong><small>צור ומלא</small></div>
-<span class="tree-select-arrow">◀</span> </div>
-<div class="tree-select-option-body">
-<div class="form-group" style="margin-bottom:14px"><label class="form-label">שם העץ</label>
-<input type="text" class="form-input" id="newTreeName"> </div>
-<button class="btn btn-primary" style="width:100%">🌳 צור</button> </div>
-</div>
-<div class="tree-select-option">
-<div class="tree-select-option-header"><span>🔗</span>
-<div><strong>הצטרפות לעץ</strong><small>עם קוד הזמנה</small></div>
-<span class="tree-select-arrow">◀</span> </div>
-<div class="tree-select-option-body">
-<div class="form-group" style="margin-bottom:14px"><label class="form-label">קוד</label>
-<input type="text" class="form-input" id="joinTreeCode" maxlength="6" style="text-transform:uppercase; text-align:center; font-size:1.4em; letter-spacing:6px; font-weight:800">
-</div>
-<button class="btn btn-primary" style="width:100%">🔗 הצטרפות</button> </div>
-</div>
-<button class="login-link" style="margin-top:20px">🚪 התנתקות</button> </div>
-</div>
-</div>
-<div id="appContainer" style="display:none">
-<div class="header-content">
-<div class="logo"><span class="logo-icon">🌳</span><span>עץ משפחתי</span> <span id="currentTreeName" class="tree-name-header" style="">
-</span><span id="roleBadge" class="role-badge"></span></div>
-<div class="header-actions">
-<div class="sync-status" id="syncStatus"><span class="sync-dot synced"></span><span class="sync-text">מסונכרן</span>
-</div>
-<button class="header-btn" id="darkModeBtn" title="מצב כהה">🌙</button><button class="header-btn">
-🔗 שיתוף</button>
-<div class="user-menu" id="userMenu">
-<div class="user-avatar" id="userAvatar">👤 </div>
-<div class="user-dropdown" id="userDropdown">
-<div class="user-info"><strong id="userName">-</strong><small id="userEmail">-</small>
-</div>
-<hr>
-<button>📤 ייצוא</button><button>📥 ייבוא</button> <input type="file" id="importFile" accept=".json" style="display:none">
-<button>🔄 שחזור גיבוי</button>
-<hr>
-<button class="danger">🚪 התנתקות</button> </div>
-</div>
-</div>
-</div>
-<div class="nav-tab active">📊 בית </div>
-<div class="nav-tab">👥 בני משפחה </div>
-<div class="nav-tab">🌴 עץ </div>
-<div class="nav-tab">🎂 ימי הולדת </div>
-<div class="nav-tab">🎉 אירועים </div>
-<div class="nav-tab">📜 היסטוריה </div>
-<div id="page-dashboard" class="page active">
-<div class="stats-bar" id="statsBar"></div>
-<div class="dashboard-grid">
-<div class="card">
-<div class="card-header">
-<div class="card-title">👥 אחרונים</div>
-<button class="btn btn-primary btn-sm">➕</button> </div>
-<div id="recentMembers"></div>
-</div>
-<div class="card">
-<div class="card-header">
-<div class="card-title">🎂 ימי הולדת קרובים</div>
-</div>
-<div id="upcomingBirthdays"></div>
-</div>
-</div>
-</div>
-<div id="page-members" class="page">
-<div class="card">
-<div class="card-header">
-<div class="card-title">👥 בני משפחה</div>
-<button class="btn btn-primary">➕ הוספה</button> </div>
-<div class="search-container"><input type="text" class="search-input" id="searchInput"><span class="search-icon">🔍</span>
-</div>
-<div class="members-grid" id="membersGrid"></div>
-</div>
-</div>
-<div id="page-tree" class="page">
-<div class="card tree-page-card">
-<div class="card-header">
-<div class="card-title">🌴 עץ</div>
-<div class="export-dropdown"><button class="btn btn-outline btn-sm">📤 ייצוא</button>
-<div class="export-dropdown-content" id="exportDropdownContent"><button>🖼️ תמונה (PNG)
-</button><button>📄 PDF</button> </div>
-</div>
-</div>
-<div class="tree-toolbar">
-<div class="toolbar-group"><label>שורש:</label><select class="form-select compact" id="treeRoot"></select>
-</div>
-<div class="toolbar-group"><label>רמות:</label>
-<div class="level-buttons"><button class="level-btn">1</button><button class="level-btn">
-2</button><button class="level-btn active">3</button><button class="level-btn">4</button>
-<button class="level-btn">5</button><button class="level-btn">∞</button> </div>
-</div>
-<label class="checkbox-label"><input type="checkbox" id="showDeceased" checked=""> 🕯️</label>
-<div class="toolbar-divider"></div>
-<div class="tree-zoom-controls"><button class="zoom-btn" title="הקטנה">−</button>
-<span class="zoom-level-display" id="zoomLevelDisplay">100%</span><button class="zoom-btn" title="הגדלה">
-+</button><button class="zoom-btn" title="איפוס">↺</button><button class="zoom-btn" title="התאם לחלון" style="font-size:0.8em">
-⊞</button> </div>
-</div>
-<div class="tree-container" id="treeContainer">
-<div class="tree-wrapper" id="treeWrapper"></div>
-</div>
-</div>
-</div>
-<div id="page-birthdays" class="page">
-<div class="card">
-<div class="card-header">
-<div class="card-title">🎂 לוח ימי הולדת</div>
-<div class="calendar-nav"><button class="btn btn-outline btn-sm">▶</button> <span class="calendar-month-label" id="calendarMonthLabel">
-</span><button class="btn btn-outline btn-sm">◀</button><button class="btn btn-outline btn-sm">
-היום</button>
-<div class="toolbar-divider"></div>
-<button class="btn btn-sm calendar-view-btn active" id="viewMonthBtn">📅 חודשי</button>
-<button class="btn btn-sm calendar-view-btn" id="viewYearBtn">📊 שנתי</button><button class="btn btn-sm calendar-view-btn" id="viewListBtn">
-📋 רשימה</button> </div>
-</div>
-<div id="calendarContent"></div>
-</div>
-</div>
-<div id="page-events" class="page">
-<div class="card">
-<div class="card-header">
-<div class="card-title">🎉 אירועים</div>
-<button class="btn btn-primary">➕ אירוע</button> </div>
-<div class="events-filters"><button class="filter-chip active">הכל</button><button class="filter-chip">
-🎂</button><button class="filter-chip">💒</button><button class="filter-chip">📜</button>
-<button class="filter-chip">🕯️</button><button class="filter-chip">📌</button> </div>
-<div id="eventsList"></div>
-</div>
-</div>
-<div id="page-history" class="page">
-<div class="card">
-<div class="card-header">
-<div class="card-title">📜 היסטוריית שינויים</div>
-<button class="btn btn-outline btn-sm">🗑️ ניקוי</button> </div>
-<div id="historyList"></div>
-</div>
-</div>
-</div>
-<div class="modal-overlay" id="memberModal">
-<div class="modal">
-<div class="modal-header">
-<div class="modal-title" id="modalTitle">➕ הוספה</div>
-<button class="modal-close">✕</button> </div>
-<form id="memberForm"><input type="hidden" id="memberId">
-<div class="photo-upload-section">
-<div class="photo-preview"><span class="placeholder" id="photoPlaceholder">📷</span><img blockedImageSrc id="photoPreviewImg" style="display:none">
-<div class="overlay">📷</div>
-</div>
-<input type="file" id="photoInput" accept="image/*" style="display:none"> </div>
-<div class="form-section">
-<div class="section-title">פרטים בסיסיים <span class="required-note">* חובה</span>
-</div>
-<div class="form-grid-2">
-<div class="form-group"><label class="form-label">שם פרטי <span class="required">
-*</span></label><input type="text" class="form-input" id="firstName"> </div>
-<div class="form-group"><label class="form-label">שם משפחה <span class="required">
-*</span></label><input type="text" class="form-input" id="lastName"> </div>
-<div class="form-group"><label class="form-label">מין <span class="required">*</span></label><select class="form-select" id="gender">
-<option value="">--</option> <option value="male">👨 זכר</option> <option value="female">
-👩 נקבה</option> </select> </div>
-<div class="form-group"><label class="form-label">תאריך לידה <span class="required">
-*</span></label> <input type="text" class="form-input" id="birthDate" maxlength="10">
-<div class="hebrew-date-row"><span class="hebrew-date-preview" id="hebrewDatePreview"></span><select class="sunset-toggle" id="birthSunset">
-<option value="before">☀️ לפני השקיעה</option> <option value="after">🌙 אחרי השקיעה
-</option> </select> </div>
-</div>
-<div class="form-group"><label class="form-label">👨 אבא</label><select class="form-select" id="fatherId">
-<option value="">-- בחר --</option> </select> </div>
-<div class="form-group"><label class="form-label">👩 אמא</label><select class="form-select" id="motherId">
-<option value="">-- בחר --</option> </select> </div>
-</div>
-</div>
-<div class="expandable-section"><button type="button" class="expand-toggle"><span class="expand-icon" id="expandIcon">◀</span> שדות נוספים
-</button>
-<div class="extra-fields" id="extraFields" style="display:none">
-<div class="form-grid-2">
-<div class="form-group"><label class="form-label">💒 בן/בת זוג</label><select class="form-select" id="spouseId">
-<option value="">--</option> </select> </div>
-<div class="form-group"><label class="form-label">🕯️ סטטוס</label><select class="form-select" id="status">
-<option value="alive">בחיים</option> <option value="deceased">נפטר/ה</option> </select>
-</div>
-<div class="form-group" id="deathDateGroup" style="display:none"><label class="form-label">תאריך פטירה</label>
-<input type="text" class="form-input" id="deathDate" maxlength="10">
-<div class="hebrew-date-row"><span class="hebrew-date-preview" id="deathHebrewDatePreview"></span><select class="sunset-toggle" id="deathSunset">
-<option value="before">☀️ לפני השקיעה</option> <option value="after">🌙 אחרי השקיעה
-</option> </select> </div>
-</div>
-<div id="deathSunsetGroup" style="display:none"></div>
-<div class="form-group"><label class="form-label">📍 מקום לידה</label><input type="text" class="form-input" id="birthPlace">
-</div>
-<div class="form-group"><label class="form-label">📞 טלפון</label><input type="tel" class="form-input" id="phone">
-</div>
-<div class="form-group"><label class="form-label">📧 מייל</label><input type="email" class="form-input" id="email">
-</div>
-<div class="form-group"><label class="form-label">📍 כתובת</label><input type="text" class="form-input" id="address">
-</div>
-<div class="form-group"><label class="form-label">💼 עיסוק</label><input type="text" class="form-input" id="occupation">
-</div>
-<div class="form-group full-width"><label class="form-label">📝 הערות</label><textarea class="form-textarea" id="notes"></textarea>
-</div>
-</div>
-</div>
-</div>
-<div class="modal-footer"><button type="button" class="btn btn-outline">ביטול</button>
-<button type="submit" class="btn btn-primary">💾 שמירה</button> </div>
-</form>
-</div>
-</div>
-<div class="modal-overlay" id="eventModal">
-<div class="modal">
-<div class="modal-header">
-<div class="modal-title" id="eventModalTitle">🎉 אירוע</div>
-<button class="modal-close">✕</button> </div>
-<form id="eventForm"><input type="hidden" id="eventId">
-<div class="form-grid-2">
-<div class="form-group full-width"><label class="form-label">שם <span class="required">
-*</span></label><input type="text" class="form-input" id="eventName"> </div>
-<div class="form-group"><label class="form-label">סוג <span class="required">*</span></label><select class="form-select" id="eventType">
-<option value="">--</option> <option value="birthday">🎂 יום הולדת</option> <option value="wedding">
-💒 חתונה</option> <option value="barMitzvah">📜 בר/בת מצווה</option> <option value="memorial">
-🕯️ אזכרה</option> <option value="holiday">🕎 חג</option> <option value="other">📌 אחר
-</option> </select> </div>
-<div class="form-group"><label class="form-label">תאריך <span class="required">*</span></label><input type="text" class="form-input" id="eventDate" maxlength="10">
-</div>
-<div class="form-group"><label class="form-label">שעה</label><input type="time" class="form-input" id="eventTime">
-</div>
-<div class="form-group"><label class="form-label">מיקום</label><input type="text" class="form-input" id="eventLocation">
-</div>
-<div class="form-group full-width"><label class="form-label">משתתפים</label><select class="form-select" id="eventParticipants" multiple="" style="min-height:80px"></select>
-</div>
-<div class="form-group full-width"><label class="form-label">תיאור</label><textarea class="form-textarea" id="eventDescription"></textarea>
-</div>
-<div class="form-group"><label class="form-label">חוזר?</label><select class="form-select" id="eventRecurring">
-<option value="no">לא</option> <option value="yearly">שנתי</option> </select> </div>
-<div class="form-group" id="recurringCalendarGroup" style="display:none"><label class="form-label">🔄 לפי לוח</label><select class="form-select" id="eventRecurringCalendar">
-<option value="gregorian">📅 לועזי</option> <option value="hebrew">🕎 עברי</option>
-</select> </div>
-</div>
-<div class="modal-footer"><button type="button" class="btn btn-outline">ביטול</button>
-<button type="submit" class="btn btn-primary">💾 שמירה</button> </div>
-</form>
-</div>
-</div>
-<div class="modal-overlay" id="connectModal">
-<div class="modal" style="max-width:450px">
-<div class="modal-header">
-<div class="modal-title">🔗 קישור</div>
-<button class="modal-close">✕</button> </div>
-<div id="connectContent"></div>
-</div>
-</div>
-<div class="modal-overlay" id="viewModal">
-<div class="modal">
-<div class="modal-header">
-<div class="modal-title">👤 פרטים</div>
-<button class="modal-close">✕</button> </div>
-<div id="viewContent"></div>
-</div>
-</div>
-<div class="modal-overlay" id="confirmModal">
-<div class="modal" style="max-width:400px">
-<div class="confirm-dialog">
-<div class="icon">⚠️</div>
-<h3 id="confirmTitle">בטוח?</h3>
-<p id="confirmMessage"></p>
-<div class="confirm-actions"><button class="btn btn-outline">ביטול</button><button class="btn btn-danger" id="confirmBtn">
-מחיקה</button> </div>
-</div>
-</div>
-</div>
-<div class="modal-overlay" id="sharingModal">
-<div class="modal" style="max-width:520px">
-<div class="modal-header">
-<div class="modal-title">🔗 שיתוף</div>
-<button class="modal-close">✕</button> </div>
-<div id="sharingContent"></div>
-</div>
-</div>
-<div class="modal-overlay" id="birthdayDetailModal">
-<div class="modal" style="max-width:400px">
-<div class="modal-header">
-<div class="modal-title">🎂 יום הולדת</div>
-<button class="modal-close">✕</button> </div>
-<div id="birthdayDetailContent"></div>
-</div>
-</div>
-<div class="modal-overlay" id="treeNameModal">
-<div class="modal" style="max-width:400px">
-<div class="modal-header">
-<div class="modal-title">✏️ עריכת שם העץ</div>
-<button class="modal-close">✕</button> </div>
-<div style="padding:10px 0">
-<div class="form-group"><label class="form-label">שם העץ</label><input type="text" class="form-input" id="treeNameInput">
-</div>
-</div>
-<div class="modal-footer"><button class="btn btn-outline">ביטול</button><button class="btn btn-primary">
-💾 שמירה</button> </div>
-</div>
-</div>
-אתר זה נבנה ע&quot;י דודי טדגי
-<div class="toast-container" id="toastContainer"></div>
-</body>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  </head>
+  <body>
+    <div id="loginScreen" class="login-screen">
+      <div class="login-card">
+        <div class="login-logo">🌳</div>
+        <h1 class="login-title">עץ משפחתי</h1>
+        <p class="login-subtitle">התחברו והתחילו לבנות את עץ המשפחה</p>
+        <div id="loginForm">
+          <div class="login-field">
+            <label>📧 מייל</label><input type="email" id="loginEmail" />
+          </div>
+          <div class="login-field">
+            <label>🔑 סיסמה</label><input type="password" id="loginPassword" />
+          </div>
+          <div id="loginError" class="login-error" style="display: none"></div>
+          <button class="login-btn primary">📧 התחברות</button
+          ><button class="login-btn google">🔵 Google</button>
+          <div class="login-divider"><span>חדש?</span></div>
+          <button class="login-btn secondary">➕ הרשמה</button>
+        </div>
+        <div id="registerForm" style="display: none">
+          <div class="login-field">
+            <label>👤 שם</label><input type="text" id="registerName" />
+          </div>
+          <div class="login-field">
+            <label>📧 מייל</label><input type="email" id="registerEmail" />
+          </div>
+          <div class="login-field">
+            <label>🔑 סיסמה</label
+            ><input type="password" id="registerPassword" />
+          </div>
+          <div class="login-field">
+            <label>🔑 אימות</label
+            ><input type="password" id="registerPassword2" />
+          </div>
+          <div
+            id="registerError"
+            class="login-error"
+            style="display: none"
+          ></div>
+          <button class="login-btn primary">➕ הרשמה</button
+          ><button class="login-btn secondary">← חזרה</button>
+        </div>
+        <button class="login-link">שכחתי סיסמה</button>
+      </div>
+    </div>
+    <div id="treeSelectScreen" style="display: none">
+      <div class="tree-select-screen">
+        <div class="tree-select-card">
+          <div style="font-size: 3em; margin-bottom: 10px">🌳</div>
+          <h1>שלום, <span id="treeSelectUserName"></span>!</h1>
+          <p style="color: #888; margin-bottom: 30px">מה תרצו לעשות?</p>
+          <div class="tree-select-option">
+            <div class="tree-select-option-header">
+              <span>🌱</span>
+              <div><strong>עץ חדש</strong><small>צור ומלא</small></div>
+              <span class="tree-select-arrow">◀</span>
+            </div>
+            <div class="tree-select-option-body">
+              <div class="form-group" style="margin-bottom: 14px">
+                <label class="form-label">שם העץ</label>
+                <input type="text" class="form-input" id="newTreeName" />
+              </div>
+              <button class="btn btn-primary" style="width: 100%">
+                🌳 צור
+              </button>
+            </div>
+          </div>
+          <div class="tree-select-option">
+            <div class="tree-select-option-header">
+              <span>🔗</span>
+              <div><strong>הצטרפות לעץ</strong><small>עם קוד הזמנה</small></div>
+              <span class="tree-select-arrow">◀</span>
+            </div>
+            <div class="tree-select-option-body">
+              <div class="form-group" style="margin-bottom: 14px">
+                <label class="form-label">קוד</label>
+                <input
+                  type="text"
+                  class="form-input"
+                  id="joinTreeCode"
+                  maxlength="6"
+                  style="
+                    text-transform: uppercase;
+                    text-align: center;
+                    font-size: 1.4em;
+                    letter-spacing: 6px;
+                    font-weight: 800;
+                  "
+                />
+              </div>
+              <button class="btn btn-primary" style="width: 100%">
+                🔗 הצטרפות
+              </button>
+            </div>
+          </div>
+          <button class="login-link" style="margin-top: 20px">
+            🚪 התנתקות
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="appContainer" style="display: none">
+      <div class="header-content">
+        <div class="logo">
+          <span class="logo-icon">🌳</span><span>עץ משפחתי</span>
+          <span id="currentTreeName" class="tree-name-header" style=""> </span
+          ><span id="roleBadge" class="role-badge"></span>
+        </div>
+        <div class="header-actions">
+          <div class="sync-status" id="syncStatus">
+            <span class="sync-dot synced"></span
+            ><span class="sync-text">מסונכרן</span>
+          </div>
+          <button class="header-btn" id="darkModeBtn" title="מצב כהה">🌙</button
+          ><button class="header-btn">🔗 שיתוף</button>
+          <div class="user-menu" id="userMenu">
+            <div class="user-avatar" id="userAvatar">👤</div>
+            <div class="user-dropdown" id="userDropdown">
+              <div class="user-info">
+                <strong id="userName">-</strong><small id="userEmail">-</small>
+              </div>
+              <hr />
+              <button>📤 ייצוא</button><button>📥 ייבוא</button>
+              <input
+                type="file"
+                id="importFile"
+                accept=".json"
+                style="display: none"
+              />
+              <button>🔄 שחזור גיבוי</button>
+              <hr />
+              <button class="danger">🚪 התנתקות</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="nav-tab active">📊 בית</div>
+      <div class="nav-tab">👥 בני משפחה</div>
+      <div class="nav-tab">🌴 עץ</div>
+      <div class="nav-tab">🎂 ימי הולדת</div>
+      <div class="nav-tab">🎉 אירועים</div>
+      <div class="nav-tab">📜 היסטוריה</div>
+      <div id="page-dashboard" class="page active">
+        <div class="stats-bar" id="statsBar"></div>
+        <div class="dashboard-grid">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">👥 אחרונים</div>
+              <button class="btn btn-primary btn-sm">➕</button>
+            </div>
+            <div id="recentMembers"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🎂 ימי הולדת קרובים</div>
+            </div>
+            <div id="upcomingBirthdays"></div>
+          </div>
+        </div>
+      </div>
+      <div id="page-members" class="page">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">👥 בני משפחה</div>
+            <button class="btn btn-primary">➕ הוספה</button>
+          </div>
+          <div class="search-container">
+            <input type="text" class="search-input" id="searchInput" /><span
+              class="search-icon"
+              >🔍</span
+            >
+          </div>
+          <div class="members-grid" id="membersGrid"></div>
+        </div>
+      </div>
+      <div id="page-tree" class="page">
+        <div class="card tree-page-card">
+          <div class="card-header">
+            <div class="card-title">🌴 עץ</div>
+            <div class="export-dropdown">
+              <button class="btn btn-outline btn-sm">📤 ייצוא</button>
+              <div class="export-dropdown-content" id="exportDropdownContent">
+                <button>🖼️ תמונה (PNG)</button><button>📄 PDF</button>
+              </div>
+            </div>
+          </div>
+          <div class="tree-toolbar">
+            <div class="toolbar-group">
+              <label>שורש:</label
+              ><select class="form-select compact" id="treeRoot"></select>
+            </div>
+            <div class="toolbar-group">
+              <label>רמות:</label>
+              <div class="level-buttons">
+                <button class="level-btn">1</button
+                ><button class="level-btn">2</button
+                ><button class="level-btn active">3</button
+                ><button class="level-btn">4</button>
+                <button class="level-btn">5</button
+                ><button class="level-btn">∞</button>
+              </div>
+            </div>
+            <label class="checkbox-label"
+              ><input type="checkbox" id="showDeceased" checked="" /> 🕯️</label
+            >
+            <div class="toolbar-divider"></div>
+            <div class="tree-zoom-controls">
+              <button class="zoom-btn" title="הקטנה">−</button>
+              <span class="zoom-level-display" id="zoomLevelDisplay">100%</span
+              ><button class="zoom-btn" title="הגדלה">+</button
+              ><button class="zoom-btn" title="איפוס">↺</button
+              ><button
+                class="zoom-btn"
+                title="התאם לחלון"
+                style="font-size: 0.8em"
+              >
+                ⊞
+              </button>
+            </div>
+          </div>
+          <div class="tree-container" id="treeContainer">
+            <div class="tree-wrapper" id="treeWrapper"></div>
+          </div>
+        </div>
+      </div>
+      <div id="page-birthdays" class="page">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🎂 לוח ימי הולדת</div>
+            <div class="calendar-nav">
+              <button class="btn btn-outline btn-sm">▶</button>
+              <span class="calendar-month-label" id="calendarMonthLabel"> </span
+              ><button class="btn btn-outline btn-sm">◀</button
+              ><button class="btn btn-outline btn-sm">היום</button>
+              <div class="toolbar-divider"></div>
+              <button
+                class="btn btn-sm calendar-view-btn active"
+                id="viewMonthBtn"
+              >
+                📅 חודשי
+              </button>
+              <button class="btn btn-sm calendar-view-btn" id="viewYearBtn">
+                📊 שנתי</button
+              ><button class="btn btn-sm calendar-view-btn" id="viewListBtn">
+                📋 רשימה
+              </button>
+            </div>
+          </div>
+          <div id="calendarContent"></div>
+        </div>
+      </div>
+      <div id="page-events" class="page">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🎉 אירועים</div>
+            <button class="btn btn-primary">➕ אירוע</button>
+          </div>
+          <div class="events-filters">
+            <button class="filter-chip active">הכל</button
+            ><button class="filter-chip">🎂</button
+            ><button class="filter-chip">💒</button
+            ><button class="filter-chip">📜</button>
+            <button class="filter-chip">🕯️</button
+            ><button class="filter-chip">📌</button>
+          </div>
+          <div id="eventsList"></div>
+        </div>
+      </div>
+      <div id="page-history" class="page">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📜 היסטוריית שינויים</div>
+            <button class="btn btn-outline btn-sm">🗑️ ניקוי</button>
+          </div>
+          <div id="historyList"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-overlay" id="memberModal">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title" id="modalTitle">➕ הוספה</div>
+          <button class="modal-close">✕</button>
+        </div>
+        <form id="memberForm">
+          <input type="hidden" id="memberId" />
+          <div class="photo-upload-section">
+            <div class="photo-preview">
+              <span class="placeholder" id="photoPlaceholder">📷</span
+              ><img
+                blockedImageSrc
+                id="photoPreviewImg"
+                style="display: none"
+              />
+              <div class="overlay">📷</div>
+            </div>
+            <input
+              type="file"
+              id="photoInput"
+              accept="image/*"
+              style="display: none"
+            />
+          </div>
+          <div class="form-section">
+            <div class="section-title">
+              פרטים בסיסיים <span class="required-note">* חובה</span>
+            </div>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label"
+                  >שם פרטי <span class="required"> *</span></label
+                ><input type="text" class="form-input" id="firstName" />
+              </div>
+              <div class="form-group">
+                <label class="form-label"
+                  >שם משפחה <span class="required"> *</span></label
+                ><input type="text" class="form-input" id="lastName" />
+              </div>
+              <div class="form-group">
+                <label class="form-label"
+                  >מין <span class="required">*</span></label
+                ><select class="form-select" id="gender">
+                  <option value="">--</option>
+                  <option value="male">👨 זכר</option>
+                  <option value="female">👩 נקבה</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label"
+                  >תאריך לידה <span class="required"> *</span></label
+                >
+                <input
+                  type="text"
+                  class="form-input"
+                  id="birthDate"
+                  maxlength="10"
+                />
+                <div class="hebrew-date-row">
+                  <span
+                    class="hebrew-date-preview"
+                    id="hebrewDatePreview"
+                  ></span
+                  ><select class="sunset-toggle" id="birthSunset">
+                    <option value="before">☀️ לפני השקיעה</option>
+                    <option value="after">🌙 אחרי השקיעה</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">👨 אבא</label
+                ><select class="form-select" id="fatherId">
+                  <option value="">-- בחר --</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">👩 אמא</label
+                ><select class="form-select" id="motherId">
+                  <option value="">-- בחר --</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="expandable-section">
+            <button type="button" class="expand-toggle">
+              <span class="expand-icon" id="expandIcon">◀</span> שדות נוספים
+            </button>
+            <div class="extra-fields" id="extraFields" style="display: none">
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label">💒 בן/בת זוג</label
+                  ><select class="form-select" id="spouseId">
+                    <option value="">--</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">🕯️ סטטוס</label
+                  ><select class="form-select" id="status">
+                    <option value="alive">בחיים</option>
+                    <option value="deceased">נפטר/ה</option>
+                  </select>
+                </div>
+                <div
+                  class="form-group"
+                  id="deathDateGroup"
+                  style="display: none"
+                >
+                  <label class="form-label">תאריך פטירה</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    id="deathDate"
+                    maxlength="10"
+                  />
+                  <div class="hebrew-date-row">
+                    <span
+                      class="hebrew-date-preview"
+                      id="deathHebrewDatePreview"
+                    ></span
+                    ><select class="sunset-toggle" id="deathSunset">
+                      <option value="before">☀️ לפני השקיעה</option>
+                      <option value="after">🌙 אחרי השקיעה</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="deathSunsetGroup" style="display: none"></div>
+                <div class="form-group">
+                  <label class="form-label">📍 מקום לידה</label
+                  ><input type="text" class="form-input" id="birthPlace" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">📞 טלפון</label
+                  ><input type="tel" class="form-input" id="phone" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">📧 מייל</label
+                  ><input type="email" class="form-input" id="email" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">📍 כתובת</label
+                  ><input type="text" class="form-input" id="address" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">💼 עיסוק</label
+                  ><input type="text" class="form-input" id="occupation" />
+                </div>
+                <div class="form-group full-width">
+                  <label class="form-label">📝 הערות</label
+                  ><textarea class="form-textarea" id="notes"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline">ביטול</button>
+            <button type="submit" class="btn btn-primary">💾 שמירה</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="modal-overlay" id="eventModal">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title" id="eventModalTitle">🎉 אירוע</div>
+          <button class="modal-close">✕</button>
+        </div>
+        <form id="eventForm">
+          <input type="hidden" id="eventId" />
+          <div class="form-grid-2">
+            <div class="form-group full-width">
+              <label class="form-label"
+                >שם <span class="required"> *</span></label
+              ><input type="text" class="form-input" id="eventName" />
+            </div>
+            <div class="form-group">
+              <label class="form-label"
+                >סוג <span class="required">*</span></label
+              ><select class="form-select" id="eventType">
+                <option value="">--</option>
+                <option value="birthday">🎂 יום הולדת</option>
+                <option value="wedding">💒 חתונה</option>
+                <option value="barMitzvah">📜 בר/בת מצווה</option>
+                <option value="memorial">🕯️ אזכרה</option>
+                <option value="holiday">🕎 חג</option>
+                <option value="other">📌 אחר</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label"
+                >תאריך <span class="required">*</span></label
+              ><input
+                type="text"
+                class="form-input"
+                id="eventDate"
+                maxlength="10"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">שעה</label
+              ><input type="time" class="form-input" id="eventTime" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">מיקום</label
+              ><input type="text" class="form-input" id="eventLocation" />
+            </div>
+            <div class="form-group full-width">
+              <label class="form-label">משתתפים</label
+              ><select
+                class="form-select"
+                id="eventParticipants"
+                multiple=""
+                style="min-height: 80px"
+              ></select>
+            </div>
+            <div class="form-group full-width">
+              <label class="form-label">תיאור</label
+              ><textarea class="form-textarea" id="eventDescription"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">חוזר?</label
+              ><select class="form-select" id="eventRecurring">
+                <option value="no">לא</option>
+                <option value="yearly">שנתי</option>
+              </select>
+            </div>
+            <div
+              class="form-group"
+              id="recurringCalendarGroup"
+              style="display: none"
+            >
+              <label class="form-label">🔄 לפי לוח</label
+              ><select class="form-select" id="eventRecurringCalendar">
+                <option value="gregorian">📅 לועזי</option>
+                <option value="hebrew">🕎 עברי</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline">ביטול</button>
+            <button type="submit" class="btn btn-primary">💾 שמירה</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="modal-overlay" id="connectModal">
+      <div class="modal" style="max-width: 450px">
+        <div class="modal-header">
+          <div class="modal-title">🔗 קישור</div>
+          <button class="modal-close">✕</button>
+        </div>
+        <div id="connectContent"></div>
+      </div>
+    </div>
+    <div class="modal-overlay" id="viewModal">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">👤 פרטים</div>
+          <button class="modal-close">✕</button>
+        </div>
+        <div id="viewContent"></div>
+      </div>
+    </div>
+    <div class="modal-overlay" id="confirmModal">
+      <div class="modal" style="max-width: 400px">
+        <div class="confirm-dialog">
+          <div class="icon">⚠️</div>
+          <h3 id="confirmTitle">בטוח?</h3>
+          <p id="confirmMessage"></p>
+          <div class="confirm-actions">
+            <button class="btn btn-outline">ביטול</button
+            ><button class="btn btn-danger" id="confirmBtn">מחיקה</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-overlay" id="sharingModal">
+      <div class="modal" style="max-width: 520px">
+        <div class="modal-header">
+          <div class="modal-title">🔗 שיתוף</div>
+          <button class="modal-close">✕</button>
+        </div>
+        <div id="sharingContent"></div>
+      </div>
+    </div>
+    <div class="modal-overlay" id="birthdayDetailModal">
+      <div class="modal" style="max-width: 400px">
+        <div class="modal-header">
+          <div class="modal-title">🎂 יום הולדת</div>
+          <button class="modal-close">✕</button>
+        </div>
+        <div id="birthdayDetailContent"></div>
+      </div>
+    </div>
+    <div class="modal-overlay" id="treeNameModal">
+      <div class="modal" style="max-width: 400px">
+        <div class="modal-header">
+          <div class="modal-title">✏️ עריכת שם העץ</div>
+          <button class="modal-close">✕</button>
+        </div>
+        <div style="padding: 10px 0">
+          <div class="form-group">
+            <label class="form-label">שם העץ</label
+            ><input type="text" class="form-input" id="treeNameInput" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline">ביטול</button
+          ><button class="btn btn-primary">💾 שמירה</button>
+        </div>
+      </div>
+    </div>
+    אתר זה נבנה ע&quot;י דודי טדגי
+    <div class="toast-container" id="toastContainer"></div>
+  </body>
 </html>
