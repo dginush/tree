@@ -4,7 +4,6 @@ const TreeRenderer = (() => {
   var MIN_ZOOM = 0.2;
   var MAX_ZOOM = 2;
   var ZOOM_STEP = 0.15;
-
   var LINE_COLOR = "#4CAF50";
   var LINE_WIDTH = 2.5;
   var COUPLE_COLOR = "#E91E63";
@@ -146,6 +145,7 @@ const TreeRenderer = (() => {
       }
     }
   }
+
   function loadLib(url, cb) {
     if (url.indexOf("html2canvas") >= 0 && typeof html2canvas !== "undefined") {
       cb();
@@ -160,6 +160,7 @@ const TreeRenderer = (() => {
     s.onload = cb;
     document.head.appendChild(s);
   }
+
   function exportAsImage() {
     var m = document.getElementById("exportDropdownContent");
     if (m) m.classList.remove("show");
@@ -202,6 +203,7 @@ const TreeRenderer = (() => {
       });
     });
   }
+
   function exportAsPDF() {
     var m = document.getElementById("exportDropdownContent");
     if (m) m.classList.remove("show");
@@ -442,7 +444,7 @@ const TreeRenderer = (() => {
   }
 
   // =============================================
-  // SVG OVERLAY - Visio-style connectors
+  // SVG OVERLAY - Visio-style connectors עם פינות מעוגלות
   // =============================================
   function drawOverlaySVG() {
     var w = document.getElementById("treeWrapper");
@@ -517,8 +519,7 @@ const TreeRenderer = (() => {
         var specificParentX = null;
         if (childMember && nc.querySelector(".tf-couple")) {
           if (childMember.parentId && childMember.parentId2) {
-            // שני הורים - חיבור לאמצע
-            specificParentX = null;
+            specificParentX = null; // שני הורים - אמצע
           } else {
             var singleParentId = childMember.parentId || childMember.parentId2;
             if (singleParentId) {
@@ -564,29 +565,56 @@ const TreeRenderer = (() => {
 
       if (grp.children.length === 1) {
         var cp = grp.children[0];
-        // קו יחיד עם עיקולים
+        // ילד יחיד - path מעוגל שלם
         svg.appendChild(createSmoothPath(gpx, parentY, cp.x, cp.y, midY));
       } else {
-        // קו מהורה למטה
-        svg.appendChild(createLine(gpx, parentY, gpx, midY));
-
-        // קו אופקי
+        // מספר ילדים מאותו הורה
+        var r = RADIUS;
         var childXs = grp.children.map(function (c) {
           return c.x;
         });
-        var leftX = Math.min.apply(null, childXs.concat([gpx]));
-        var rightX = Math.max.apply(null, childXs.concat([gpx]));
-        svg.appendChild(createLine(leftX, midY, rightX, midY));
 
-        // קווים יורדים לכל ילד עם עיקול בפינה
+        // קו אנכי מההורה למטה עד midY
+        svg.appendChild(createLine(gpx, parentY, gpx, midY));
+
+        // לכל ילד: path מעוגל מ-midY למטה
         grp.children.forEach(function (cp) {
-          svg.appendChild(createCornerDrop(cp.x, midY, cp.y));
+          var cx = cp.x;
+          var cr = Math.min(
+            r,
+            Math.abs(cx - gpx) / 2,
+            Math.abs(cp.y - midY) / 2
+          );
+
+          if (Math.abs(cx - gpx) < 3) {
+            // ישר מתחת להורה - קו ישר
+            svg.appendChild(createLine(cx, midY, cx, cp.y));
+          } else {
+            // path מעוגל: אופקי מ-gpx עד cx, ואז למטה
+            var dir = cx > gpx ? 1 : -1;
+            var pathD = "M " + gpx + " " + midY;
+            pathD += " L " + (cx - cr * dir) + " " + midY;
+            pathD += " Q " + cx + " " + midY + " " + cx + " " + (midY + cr);
+            pathD += " L " + cx + " " + cp.y;
+
+            var el = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "path"
+            );
+            el.setAttribute("d", pathD);
+            el.setAttribute("stroke", LINE_COLOR);
+            el.setAttribute("stroke-width", LINE_WIDTH);
+            el.setAttribute("fill", "none");
+            el.setAttribute("stroke-linecap", "round");
+            el.setAttribute("stroke-linejoin", "round");
+            svg.appendChild(el);
+          }
         });
       }
     });
   }
 
-  // יצירת path חלק בסגנון Visio
+  // יצירת path חלק בסגנון Visio - לילד יחיד
   function createSmoothPath(x1, y1, x2, y2, midY) {
     var r = Math.min(
       RADIUS,
@@ -631,19 +659,6 @@ const TreeRenderer = (() => {
     return el;
   }
 
-  function createCornerDrop(cx, midY, bottomY) {
-    // קו אנכי מהבר האופקי למטה
-    var el = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    el.setAttribute("x1", cx);
-    el.setAttribute("y1", midY);
-    el.setAttribute("x2", cx);
-    el.setAttribute("y2", bottomY);
-    el.setAttribute("stroke", LINE_COLOR);
-    el.setAttribute("stroke-width", LINE_WIDTH);
-    el.setAttribute("stroke-linecap", "round");
-    return el;
-  }
-
   // Resize & tab switch
   var _rt;
   window.addEventListener("resize", function () {
@@ -656,6 +671,7 @@ const TreeRenderer = (() => {
     var c = document.getElementById("treeContainer");
     if (!c) return;
 
+    // Zoom with Ctrl+Wheel
     c.addEventListener(
       "wheel",
       function (e) {
@@ -667,11 +683,13 @@ const TreeRenderer = (() => {
       { passive: false }
     );
 
+    // Pan (drag)
     var isPanning = false,
       startX = 0,
       startY = 0,
       scrollStartX = 0,
       scrollStartY = 0;
+
     c.addEventListener("mousedown", function (e) {
       if (e.target.closest(".tf-person") || e.target.closest("button")) return;
       isPanning = true;
@@ -682,11 +700,13 @@ const TreeRenderer = (() => {
       c.style.cursor = "grabbing";
       e.preventDefault();
     });
+
     document.addEventListener("mousemove", function (e) {
       if (!isPanning) return;
       c.scrollLeft = scrollStartX - (e.clientX - startX);
       c.scrollTop = scrollStartY - (e.clientY - startY);
     });
+
     document.addEventListener("mouseup", function () {
       if (isPanning) {
         isPanning = false;
@@ -694,7 +714,7 @@ const TreeRenderer = (() => {
       }
     });
 
-    // Touch
+    // Touch support
     c.addEventListener(
       "touchstart",
       function (e) {
@@ -710,6 +730,7 @@ const TreeRenderer = (() => {
       },
       { passive: true }
     );
+
     c.addEventListener(
       "touchmove",
       function (e) {
@@ -719,6 +740,7 @@ const TreeRenderer = (() => {
       },
       { passive: true }
     );
+
     c.addEventListener("touchend", function () {
       isPanning = false;
     });
