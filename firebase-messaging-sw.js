@@ -1,4 +1,3 @@
-// Service Worker for Firebase Cloud Messaging
 importScripts(
   "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"
 );
@@ -17,19 +16,50 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// התראות ברקע - כשהאתר סגור
 messaging.onBackgroundMessage(function (payload) {
-  var title = payload.notification?.title || "🌳 עץ משפחתי";
+  var data = payload.data || {};
+  var notification = payload.notification || {};
+
+  var title = notification.title || "🌳 עץ משפחתי";
   var options = {
-    body: payload.notification?.body || "",
-    icon: "🌳",
-    badge: "🎂",
-    tag: payload.data?.type || "general",
-    data: payload.data,
+    body: notification.body || "",
+    icon: "/icon-192.png",
+    badge: "/icon-72.png",
+    tag: data.type || "general",
+    data: data,
+    actions: [
+      { action: "open", title: "פתח" },
+      { action: "dismiss", title: "סגור" },
+    ],
+    vibrate: [200, 100, 200],
+    requireInteraction: true,
   };
+
   return self.registration.showNotification(title, options);
 });
 
+// לחיצה על התראה
 self.addEventListener("notificationclick", function (event) {
   event.notification.close();
-  event.waitUntil(clients.openWindow("/"));
+
+  if (event.action === "dismiss") return;
+
+  event.waitUntil(
+    clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then(function (clientList) {
+        // אם יש חלון פתוח - תתמקד בו
+        for (var i = 0; i < clientList.length; i++) {
+          if (
+            clientList[i].url.includes(self.location.origin) &&
+            "focus" in clientList[i]
+          ) {
+            return clientList[i].focus();
+          }
+        }
+        // אחרת - פתח חלון חדש
+        return clients.openWindow("/");
+      })
+  );
 });
