@@ -492,15 +492,54 @@ const TreeRenderer = (() => {
     var parentY = pRect.bottom - wRect.top;
 
     // מיקום כל ילד (חלק עליון)
+    // מיקום כל ילד (חלק עליון)
     var childPoints = branches
       .map(function (branch) {
-        var childPerson = branch.querySelector(
-          ":scope > .tf-tree > .tf-nc .tf-person"
-        );
-        if (!childPerson) childPerson = branch.querySelector(".tf-person");
+        // חיפוש הילד הישיר - רק ברמה הראשונה של הענף
+        var firstTree = branch.querySelector(":scope > .tf-tree");
+        if (!firstTree) return null;
+        var firstNc = firstTree.querySelector(":scope > .tf-nc");
+        if (!firstNc) return null;
+
+        // מציאת ה-person הראשון ב-nc (לא בן זוג!)
+        var childPerson = null;
+        var allPersons = firstNc.querySelectorAll(".tf-person");
+
+        // אם יש זוג - מצא את הילד (לא את בן הזוג)
+        var couple = firstNc.querySelector(".tf-couple");
+        if (couple) {
+          // בזוג - הילד הוא זה שה-parentId שלו מצביע על ההורים למעלה
+          allPersons.forEach(function (p) {
+            var mid = p.getAttribute("data-member-id");
+            var ms = App.getMembers();
+            var member = null;
+            for (var j = 0; j < ms.length; j++) {
+              if (ms[j].id === mid) {
+                member = ms[j];
+                break;
+              }
+            }
+            if (!member) return;
+            // בדיקה אם זה ילד של ההורה למעלה
+            var parentPersonEl =
+              nc.querySelector(
+                '.tf-person[data-member-id="' + member.parentId + '"]'
+              ) ||
+              nc.querySelector(
+                '.tf-person[data-member-id="' + member.parentId2 + '"]'
+              );
+            if (parentPersonEl) {
+              childPerson = p;
+            }
+          });
+        }
+
+        // אם לא מצאנו דרך הזוג, קח את הראשון
+        if (!childPerson) {
+          childPerson = firstNc.querySelector(".tf-person");
+        }
         if (!childPerson) return null;
 
-        // בדיקה: ילד עם הורה אחד בלבד
         var memberId = childPerson.getAttribute("data-member-id");
         var ms = App.getMembers();
         var childMember = null;
@@ -515,23 +554,31 @@ const TreeRenderer = (() => {
         var cx = cRect.left + cRect.width / 2 - wRect.left;
         var cy = cRect.top - wRect.top;
 
-        // בדיקה אם צריך חיבור להורה ספציפי
+        // חיבור להורה ספציפי - רק אם יש הורה אחד בלבד
         var specificParentX = null;
         if (childMember && nc.querySelector(".tf-couple")) {
-          if (childMember.parentId && childMember.parentId2) {
-            specificParentX = null; // שני הורים - אמצע
-          } else {
-            var singleParentId = childMember.parentId || childMember.parentId2;
-            if (singleParentId) {
-              var parentPersonEl = nc.querySelector(
-                '.tf-person[data-member-id="' + singleParentId + '"]'
-              );
-              if (parentPersonEl) {
-                var ppRect = parentPersonEl.getBoundingClientRect();
-                specificParentX = ppRect.left + ppRect.width / 2 - wRect.left;
-              }
+          var hasParent1 = childMember.parentId ? true : false;
+          var hasParent2 = childMember.parentId2 ? true : false;
+
+          // רק אם יש בדיוק הורה אחד
+          if (hasParent1 && !hasParent2) {
+            var parentEl = nc.querySelector(
+              '.tf-person[data-member-id="' + childMember.parentId + '"]'
+            );
+            if (parentEl) {
+              var ppRect = parentEl.getBoundingClientRect();
+              specificParentX = ppRect.left + ppRect.width / 2 - wRect.left;
+            }
+          } else if (hasParent2 && !hasParent1) {
+            var parentEl = nc.querySelector(
+              '.tf-person[data-member-id="' + childMember.parentId2 + '"]'
+            );
+            if (parentEl) {
+              var ppRect = parentEl.getBoundingClientRect();
+              specificParentX = ppRect.left + ppRect.width / 2 - wRect.left;
             }
           }
+          // אם שני הורים - specificParentX נשאר null = אמצע הזוג
         }
 
         return { x: cx, y: cy, specificParentX: specificParentX };
