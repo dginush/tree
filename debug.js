@@ -34,3 +34,5 @@ PushNotifications.checkNotifications();
 console.log('Permission:', Notification.permission);
 console.log('PushNotifications exists:', typeof PushNotifications);
 console.log('Browser support:', 'Notification' in window);
+
+BL8pERC-fdA9cvYY_uwkp_IKsWp_Q-UaHBwGS5nAa1Rnkc-zszkk2hr_iKjbVcMar6-mw8xxHPRIcDDD0r4_EPw
