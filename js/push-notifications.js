@@ -78,9 +78,12 @@ const PushNotifications = (() => {
       var db = FirebaseDB.getDb();
       if (!db) return;
 
+      // מזהה ייחודי לכל מכשיר: userId + hash של הטוקן
+      var deviceId = user.uid + "_" + simpleHash(token);
+
       await db
         .collection("fcmTokens")
-        .doc(user.uid)
+        .doc(deviceId)
         .set(
           {
             token: token,
@@ -94,6 +97,15 @@ const PushNotifications = (() => {
     } catch (err) {
       console.log("Save token error:", err);
     }
+  }
+
+  function simpleHash(str) {
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+      hash = (hash << 5) - hash + str.charCodeAt(i);
+      hash = hash & hash;
+    }
+    return Math.abs(hash).toString(36);
   }
 
   function listenToForegroundMessages() {
