@@ -1,0 +1,34 @@
+=== Deploying to 'family-tree-d41a6'...
+
+i  deploying functions
+Running command: npm --prefix "$RESOURCE_DIR" run lint
+npm error Missing script: "lint"
+npm error
+npm error Did you mean this?
+npm error   npm link # Symlink a package folder
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run
+npm error A complete log of this run can be found in: C:\Users\qadem\AppData\Local\npm-cache\_logs\2026-03-16T14_06_00_229Z-debug-0.log
+node:events:486
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: spawn npm --prefix "%RESOURCE_DIR%" run lint ENOENT
+    at notFoundError (C:\Users\qadem\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\cross-spawn\lib\enoent.js:6:26)
+    at verifyENOENT (C:\Users\qadem\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\cross-spawn\lib\enoent.js:40:16)
+    at cp.emit (C:\Users\qadem\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\cross-spawn\lib\enoent.js:27:25)
+    at ChildProcess._handle.onexit (node:internal/child_process:294:12)
+Emitted 'error' event on ChildProcess instance at:
+    at cp.emit (C:\Users\qadem\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\cross-spawn\lib\enoent.js:30:37)
+    at ChildProcess._handle.onexit (node:internal/child_process:294:12) {
+  code: 'ENOENT',
+  errno: 'ENOENT',
+  syscall: 'spawn npm --prefix "%RESOURCE_DIR%" run lint',
+  path: 'npm --prefix "%RESOURCE_DIR%" run lint',
+  spawnargs: []
+}
+
+Node.js v25.8.0
+
+Error: functions predeploy error: Command terminated with non-zero exit code 1
