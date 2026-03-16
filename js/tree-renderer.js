@@ -6,7 +6,6 @@ const TreeRenderer = (() => {
   var ZOOM_STEP = 0.15;
   var LINE_COLOR = "#4CAF50";
   var LINE_WIDTH = 2.5;
-  var COUPLE_COLOR = "#E91E63";
   var RADIUS = 12;
 
   function setLevel(n, el) {
@@ -62,62 +61,24 @@ const TreeRenderer = (() => {
     return p.length !== 3 ? dateStr : p[0] + "." + p[1] + "." + p[2];
   }
 
-  function isChildOf(person, parentIds) {
-    if (!person) return false;
-    for (var i = 0; i < parentIds.length; i++) {
-      if (person.parentId === parentIds[i] || person.parentId2 === parentIds[i])
-        return true;
-    }
-    return false;
-  }
-
-  // Zoom
+  // =============================================
+  // ZOOM - שינוי מהותי: ציור קווים תמיד ב-scale(1)
+  // =============================================
   function zoomIn() {
     currentZoom = Math.min(MAX_ZOOM, currentZoom + ZOOM_STEP);
-    applyZoom();
+    applyZoomOnly();
   }
   function zoomOut() {
     currentZoom = Math.max(MIN_ZOOM, currentZoom - ZOOM_STEP);
-    applyZoom();
+    applyZoomOnly();
   }
   function zoomReset() {
     currentZoom = 1;
-    applyZoom();
+    applyZoomOnly();
   }
 
-  function zoomFit() {
-    var c = document.getElementById("treeContainer"),
-      w = document.getElementById("treeWrapper");
-    if (!c || !w) return;
-    currentZoom = 1;
-    w.style.transform = "scale(1)";
-    w.style.transformOrigin = "top right";
-    requestAnimationFrame(function () {
-      var wW = w.scrollWidth,
-        wH = w.scrollHeight;
-      var cW = c.clientWidth,
-        cH = c.clientHeight;
-      if (!wW || !wH) return;
-      currentZoom = Math.max(
-        MIN_ZOOM,
-        Math.min((cW - 20) / wW, (cH - 20) / wH, 1)
-      );
-      w.style.transform = "scale(" + currentZoom + ")";
-      var d = document.getElementById("zoomLevelDisplay");
-      if (d) d.textContent = Math.round(currentZoom * 100) + "%";
-      drawOverlaySVG();
-      requestAnimationFrame(function () {
-        requestAnimationFrame(function () {
-          var scaledW = wW * currentZoom;
-          var scaledH = wH * currentZoom;
-          c.scrollLeft = scaledW < cW ? 0 : Math.round((scaledW - cW) / 2);
-          c.scrollTop = scaledH < cH ? 0 : Math.round((scaledH - cH) / 2);
-        });
-      });
-    });
-  }
-
-  function applyZoom() {
+  // applyZoomOnly - רק משנה scale, לא מצייר מחדש קווים
+  function applyZoomOnly() {
     var w = document.getElementById("treeWrapper");
     var d = document.getElementById("zoomLevelDisplay");
     if (w) {
@@ -125,10 +86,56 @@ const TreeRenderer = (() => {
       w.style.transformOrigin = "top right";
     }
     if (d) d.textContent = Math.round(currentZoom * 100) + "%";
-    // ציור מחדש של קווים אחרי שהדפדפן מעדכן layout
+  }
+
+  // drawConnectorsAtScale1 - מאפס zoom, מצייר, מחזיר zoom
+  function drawConnectorsAtScale1() {
+    var w = document.getElementById("treeWrapper");
+    if (!w) return;
+    // שמור zoom נוכחי
+    var savedZoom = currentZoom;
+    // איפוס ל-1 לציור מדויק
+    w.style.transform = "scale(1)";
+    // מחכה לדפדפן לעדכן layout
     requestAnimationFrame(function () {
+      drawAllLocalConnectors();
+      // מחזיר zoom
+      w.style.transform = "scale(" + savedZoom + ")";
+      w.style.transformOrigin = "top right";
+    });
+  }
+
+  function zoomFit() {
+    var c = document.getElementById("treeContainer"),
+      w = document.getElementById("treeWrapper");
+    if (!c || !w) return;
+    // איפוס zoom לחישוב גודל אמיתי
+    currentZoom = 1;
+    w.style.transform = "scale(1)";
+    w.style.transformOrigin = "top right";
+    requestAnimationFrame(function () {
+      // ציור קווים ב-scale 1
+      drawAllLocalConnectors();
       requestAnimationFrame(function () {
-        drawOverlaySVG();
+        var wW = w.scrollWidth,
+          wH = w.scrollHeight;
+        var cW = c.clientWidth,
+          cH = c.clientHeight;
+        if (!wW || !wH) return;
+        currentZoom = Math.max(
+          MIN_ZOOM,
+          Math.min((cW - 20) / wW, (cH - 20) / wH, 1)
+        );
+        w.style.transform = "scale(" + currentZoom + ")";
+        var d = document.getElementById("zoomLevelDisplay");
+        if (d) d.textContent = Math.round(currentZoom * 100) + "%";
+        // מרכוז
+        requestAnimationFrame(function () {
+          var scaledW = wW * currentZoom;
+          var scaledH = wH * currentZoom;
+          c.scrollLeft = scaledW < cW ? 0 : Math.round((scaledW - cW) / 2);
+          c.scrollTop = scaledH < cH ? 0 : Math.round((scaledH - cH) / 2);
+        });
       });
     });
   }
@@ -150,7 +157,6 @@ const TreeRenderer = (() => {
       }
     }
   }
-
   function loadLib(url, cb) {
     if (url.indexOf("html2canvas") >= 0 && typeof html2canvas !== "undefined") {
       cb();
@@ -165,7 +171,6 @@ const TreeRenderer = (() => {
     s.onload = cb;
     document.head.appendChild(s);
   }
-
   function exportAsImage() {
     var m = document.getElementById("exportDropdownContent");
     if (m) m.classList.remove("show");
@@ -174,99 +179,37 @@ const TreeRenderer = (() => {
     App.showToast("מכין תמונה...", "warning");
     var sz = currentZoom;
     w.style.transform = "scale(1)";
-    w.style.transformOrigin = "top right";
     requestAnimationFrame(function () {
-      drawOverlaySVG();
+      drawAllLocalConnectors();
       requestAnimationFrame(function () {
-        // המרת ה-SVG ל-inline כדי ש-html2canvas יצלם אותו נכון
-        var svgEl = w.querySelector(".tree-svg-overlay");
-        if (svgEl) {
-          var svgData = new XMLSerializer().serializeToString(svgEl);
-          var canvas2 = document.createElement("canvas");
-          canvas2.width = svgEl.getAttribute("width") || w.scrollWidth;
-          canvas2.height = svgEl.getAttribute("height") || w.scrollHeight;
-          var ctx2 = canvas2.getContext("2d");
-          var img2 = new Image();
-          img2.onload = function () {
-            ctx2.drawImage(img2, 0, 0);
-            // הסתר את ה-SVG זמנית והוסף את התמונה במקומו
-            svgEl.style.display = "none";
-            var tempImg = document.createElement("img");
-            tempImg.src = canvas2.toDataURL("image/png");
-            tempImg.className = "tree-svg-overlay-img";
-            tempImg.style.cssText =
-              "position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;";
-            w.appendChild(tempImg);
-
-            loadLib(
-              "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
-              function () {
-                html2canvas(w, {
-                  backgroundColor: "#FAFFF5",
-                  scale: 2,
-                  useCORS: true,
-                  logging: false,
-                  width: w.scrollWidth,
-                  height: w.scrollHeight,
-                })
-                  .then(function (canvas) {
-                    // ניקוי
-                    tempImg.remove();
-                    svgEl.style.display = "";
-
-                    var a = document.createElement("a");
-                    a.download = "family-tree.png";
-                    a.href = canvas.toDataURL("image/png");
-                    a.click();
-                    App.showToast("התמונה הורדה! 🖼️");
-                    currentZoom = sz;
-                    applyZoom();
-                  })
-                  .catch(function (err) {
-                    tempImg.remove();
-                    svgEl.style.display = "";
-                    console.error(err);
-                    App.showToast("שגיאה", "error");
-                    currentZoom = sz;
-                    applyZoom();
-                  });
-              }
-            );
-          };
-          img2.src =
-            "data:image/svg+xml;base64," +
-            btoa(unescape(encodeURIComponent(svgData)));
-        } else {
-          // אין SVG - ייצוא רגיל
-          loadLib(
-            "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
-            function () {
-              html2canvas(w, {
-                backgroundColor: "#FAFFF5",
-                scale: 2,
-                useCORS: true,
-                logging: false,
-                width: w.scrollWidth,
-                height: w.scrollHeight,
+        loadLib(
+          "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+          function () {
+            html2canvas(w, {
+              backgroundColor: "#FAFFF5",
+              scale: 2,
+              useCORS: true,
+              logging: false,
+              width: w.scrollWidth,
+              height: w.scrollHeight,
+            })
+              .then(function (canvas) {
+                var a = document.createElement("a");
+                a.download = "family-tree.png";
+                a.href = canvas.toDataURL("image/png");
+                a.click();
+                App.showToast("התמונה הורדה! 🖼️");
+                currentZoom = sz;
+                applyZoomOnly();
               })
-                .then(function (canvas) {
-                  var a = document.createElement("a");
-                  a.download = "family-tree.png";
-                  a.href = canvas.toDataURL("image/png");
-                  a.click();
-                  App.showToast("התמונה הורדה! 🖼️");
-                  currentZoom = sz;
-                  applyZoom();
-                })
-                .catch(function (err) {
-                  console.error(err);
-                  App.showToast("שגיאה", "error");
-                  currentZoom = sz;
-                  applyZoom();
-                });
-            }
-          );
-        }
+              .catch(function (err) {
+                console.error(err);
+                App.showToast("שגיאה", "error");
+                currentZoom = sz;
+                applyZoomOnly();
+              });
+          }
+        );
       });
     });
   }
@@ -278,97 +221,58 @@ const TreeRenderer = (() => {
     App.showToast("מכין PDF...", "warning");
     var sz = currentZoom;
     w.style.transform = "scale(1)";
-    w.style.transformOrigin = "top right";
     requestAnimationFrame(function () {
-      drawOverlaySVG();
+      drawAllLocalConnectors();
       requestAnimationFrame(function () {
-        var svgEl = w.querySelector(".tree-svg-overlay");
-        var tempImg = null;
-
-        function doExport() {
-          loadLib(
-            "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
-            function () {
-              loadLib(
-                "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
-                function () {
-                  html2canvas(w, {
-                    backgroundColor: "#FAFFF5",
-                    scale: 2,
-                    useCORS: true,
-                    logging: false,
-                    width: w.scrollWidth,
-                    height: w.scrollHeight,
-                  })
-                    .then(function (canvas) {
-                      if (tempImg) {
-                        tempImg.remove();
-                        svgEl.style.display = "";
-                      }
-                      var img = canvas.toDataURL("image/png");
-                      var o =
-                        canvas.width > canvas.height ? "landscape" : "portrait";
-                      var pdf = new jspdf.jsPDF({
-                        orientation: o,
-                        unit: "mm",
-                        format: "a4",
-                      });
-                      var pW = pdf.internal.pageSize.getWidth() - 20,
-                        pH = pdf.internal.pageSize.getHeight() - 20;
-                      var r = Math.min(pW / canvas.width, pH / canvas.height);
-                      pdf.addImage(
-                        img,
-                        "PNG",
-                        10 + (pW - canvas.width * r) / 2,
-                        10 + (pH - canvas.height * r) / 2,
-                        canvas.width * r,
-                        canvas.height * r
-                      );
-                      pdf.save("family-tree.pdf");
-                      App.showToast("PDF הורד! 📄");
-                      currentZoom = sz;
-                      applyZoom();
-                    })
-                    .catch(function (err) {
-                      if (tempImg) {
-                        tempImg.remove();
-                        svgEl.style.display = "";
-                      }
-                      console.error(err);
-                      App.showToast("שגיאה", "error");
-                      currentZoom = sz;
-                      applyZoom();
+        loadLib(
+          "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+          function () {
+            loadLib(
+              "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+              function () {
+                html2canvas(w, {
+                  backgroundColor: "#FAFFF5",
+                  scale: 2,
+                  useCORS: true,
+                  logging: false,
+                  width: w.scrollWidth,
+                  height: w.scrollHeight,
+                })
+                  .then(function (canvas) {
+                    var img = canvas.toDataURL("image/png");
+                    var o =
+                      canvas.width > canvas.height ? "landscape" : "portrait";
+                    var pdf = new jspdf.jsPDF({
+                      orientation: o,
+                      unit: "mm",
+                      format: "a4",
                     });
-                }
-              );
-            }
-          );
-        }
-
-        if (svgEl) {
-          var svgData = new XMLSerializer().serializeToString(svgEl);
-          var canvas2 = document.createElement("canvas");
-          canvas2.width = svgEl.getAttribute("width") || w.scrollWidth;
-          canvas2.height = svgEl.getAttribute("height") || w.scrollHeight;
-          var ctx2 = canvas2.getContext("2d");
-          var img2 = new Image();
-          img2.onload = function () {
-            ctx2.drawImage(img2, 0, 0);
-            svgEl.style.display = "none";
-            tempImg = document.createElement("img");
-            tempImg.src = canvas2.toDataURL("image/png");
-            tempImg.className = "tree-svg-overlay-img";
-            tempImg.style.cssText =
-              "position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;";
-            w.appendChild(tempImg);
-            doExport();
-          };
-          img2.src =
-            "data:image/svg+xml;base64," +
-            btoa(unescape(encodeURIComponent(svgData)));
-        } else {
-          doExport();
-        }
+                    var pW = pdf.internal.pageSize.getWidth() - 20,
+                      pH = pdf.internal.pageSize.getHeight() - 20;
+                    var r = Math.min(pW / canvas.width, pH / canvas.height);
+                    pdf.addImage(
+                      img,
+                      "PNG",
+                      10 + (pW - canvas.width * r) / 2,
+                      10 + (pH - canvas.height * r) / 2,
+                      canvas.width * r,
+                      canvas.height * r
+                    );
+                    pdf.save("family-tree.pdf");
+                    App.showToast("PDF הורד! 📄");
+                    currentZoom = sz;
+                    applyZoomOnly();
+                  })
+                  .catch(function (err) {
+                    console.error(err);
+                    App.showToast("שגיאה", "error");
+                    currentZoom = sz;
+                    applyZoomOnly();
+                  });
+              }
+            );
+          }
+        );
       });
     });
   }
@@ -425,7 +329,6 @@ const TreeRenderer = (() => {
         );
       });
 
-      // מיון ילדים לפי גיל
       children.sort(function (a, b) {
         var da = a.birthDate ? a.birthDate.split("/") : null;
         var db = b.birthDate ? b.birthDate.split("/") : null;
@@ -444,15 +347,15 @@ const TreeRenderer = (() => {
       h += '<div class="tf-nc">';
       h += buildCouple(person, spouses, parentIds);
       h += "</div>";
-
       if (children.length > 0 && level < lv) {
         h += '<div class="tf-gap"></div>';
         h += '<div class="tf-children-row">';
         children.forEach(function (c) {
           if (!vis[c.id]) {
-            h += '<div class="tf-branch">';
-            h += build(c, level + 1, allParentIds);
-            h += "</div>";
+            h +=
+              '<div class="tf-branch">' +
+              build(c, level + 1, allParentIds) +
+              "</div>";
           }
         });
         h += "</div>";
@@ -500,14 +403,12 @@ const TreeRenderer = (() => {
       if (p.status === "deceased") gc += " deceased";
       var bg = p.gender === "male" ? "var(--male)" : "var(--female)";
       var emoji = getPersonEmoji(p.gender, p.birthDate, p.deathDate);
-
       var html =
         '<div class="tf-person ' +
         gc +
         '" data-member-id="' +
         p.id +
-        '" ' +
-        "onclick=\"App.viewMember('" +
+        '" onclick="App.viewMember(\'' +
         p.id +
         "')\">";
       html += '<div class="tf-photo">';
@@ -536,34 +437,32 @@ const TreeRenderer = (() => {
       return html;
     }
 
+    // שלב 1: בנה HTML ב-scale 1
+    var savedZoom = currentZoom;
+    w.style.transform = "scale(1)";
     w.innerHTML = build(root, 1, []);
 
-    // ציור SVG overlay אחרי ש-DOM מוכן
+    // שלב 2: צייר קווים ב-scale 1
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
-        drawOverlaySVG();
+        drawAllLocalConnectors();
+        // שלב 3: החזר zoom
+        currentZoom = savedZoom;
+        applyZoomOnly();
       });
     });
-
-    applyZoom();
   }
 
   // =============================================
-  // SVG OVERLAY - Visio-style connectors עם פינות מעוגלות
+  // CONNECTORS - מצוירים בתוך tf-gap (יחסי)
   // =============================================
-  function drawOverlaySVG() {
+  function drawAllLocalConnectors() {
     var w = document.getElementById("treeWrapper");
     if (!w) return;
-
-    // הסרת כל SVG ישנים
-    w.querySelectorAll(".tree-svg-overlay").forEach(function (el) {
-      el.remove();
-    });
+    // ניקוי ישנים
     w.querySelectorAll(".tf-connector-svg").forEach(function (el) {
       el.remove();
     });
-
-    // לכל tf-tree - צייר SVG מקומי בתוך ה-tf-gap שלו
     var trees = w.querySelectorAll(".tf-tree");
     trees.forEach(function (tree) {
       drawLocalConnector(tree);
@@ -578,30 +477,22 @@ const TreeRenderer = (() => {
 
     var branches = [];
     for (var i = 0; i < childrenRow.children.length; i++) {
-      if (childrenRow.children[i].classList.contains("tf-branch")) {
+      if (childrenRow.children[i].classList.contains("tf-branch"))
         branches.push(childrenRow.children[i]);
-      }
     }
     if (branches.length === 0) return;
 
-    // תיקון zoom: getBoundingClientRect מחזיר ערכים מוכפלים ב-scale
-    var z = currentZoom || 1;
-
+    // כל החישובים ב-scale 1 (כבר מובטח מבחוץ)
     var gapRect = gap.getBoundingClientRect();
-    var gapH = gapRect.height / z;
-    var gapW = gapRect.width / z;
-    var gapLeft = gapRect.left / z;
-    var gapTop = gapRect.top / z;
+    var gapH = gapRect.height;
+    var gapLeft = gapRect.left;
 
-    // מיקום ההורה
     var parentEl =
       nc.querySelector(".tf-couple") || nc.querySelector(".tf-person");
     if (!parentEl) return;
     var pRect = parentEl.getBoundingClientRect();
-    var parentX = (pRect.left + pRect.width / 2) / z - gapLeft;
-    var parentY = 0;
+    var parentX = pRect.left + pRect.width / 2 - gapLeft;
 
-    // מיקום כל ילד
     var ms = App.getMembers();
     var parentPersonIds = [];
     nc.querySelectorAll(".tf-person").forEach(function (p) {
@@ -664,8 +555,7 @@ const TreeRenderer = (() => {
         if (!childPerson) return null;
 
         var cRect = childPerson.getBoundingClientRect();
-        var cx = (cRect.left + cRect.width / 2) / z - gapLeft;
-        var cy = gapH;
+        var cx = cRect.left + cRect.width / 2 - gapLeft;
 
         var specificParentX = null;
         if (childMember && nc.querySelector(".tf-couple")) {
@@ -681,7 +571,7 @@ const TreeRenderer = (() => {
             );
             if (el) {
               var r = el.getBoundingClientRect();
-              specificParentX = (r.left + r.width / 2) / z - gapLeft;
+              specificParentX = r.left + r.width / 2 - gapLeft;
             }
           } else if (hasP2 && !hasP1) {
             var el = nc.querySelector(
@@ -689,12 +579,11 @@ const TreeRenderer = (() => {
             );
             if (el) {
               var r = el.getBoundingClientRect();
-              specificParentX = (r.left + r.width / 2) / z - gapLeft;
+              specificParentX = r.left + r.width / 2 - gapLeft;
             }
           }
         }
-
-        return { x: cx, y: cy, specificParentX: specificParentX };
+        return { x: cx, y: gapH, specificParentX: specificParentX };
       })
       .filter(Boolean);
 
@@ -704,7 +593,7 @@ const TreeRenderer = (() => {
     svg.setAttribute("class", "tf-connector-svg");
     svg.style.cssText =
       "position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;";
-    svg.setAttribute("width", gapW);
+    svg.setAttribute("width", gapRect.width);
     svg.setAttribute("height", gapH);
 
     var midY = gapH / 2;
@@ -717,17 +606,16 @@ const TreeRenderer = (() => {
       groups[key].children.push(cp);
     });
 
-    var groupKeys = Object.keys(groups);
-    groupKeys.forEach(function (key) {
+    Object.keys(groups).forEach(function (key) {
       var grp = groups[key];
       var gpx = grp.parentX;
 
       if (grp.children.length === 1) {
         var cp = grp.children[0];
-        svg.appendChild(createSmoothPath(gpx, parentY, cp.x, cp.y, midY));
+        svg.appendChild(createSmoothPath(gpx, 0, cp.x, cp.y, midY));
       } else {
         var r = RADIUS;
-        svg.appendChild(createLine(gpx, parentY, gpx, midY));
+        svg.appendChild(createLine(gpx, 0, gpx, midY));
         grp.children.forEach(function (cp) {
           var cx = cp.x;
           var cr = Math.min(
@@ -763,212 +651,6 @@ const TreeRenderer = (() => {
     gap.appendChild(svg);
   }
 
-  function drawTreeConnectors(treeEl, svg, wRect) {
-    var nc = treeEl.querySelector(":scope > .tf-nc");
-    var childrenRow = treeEl.querySelector(":scope > .tf-children-row");
-    if (!nc || !childrenRow) return;
-
-    var branches = [];
-    for (var i = 0; i < childrenRow.children.length; i++) {
-      if (childrenRow.children[i].classList.contains("tf-branch")) {
-        branches.push(childrenRow.children[i]);
-      }
-    }
-    if (branches.length === 0) return;
-
-    // מיקום ההורה (תחתית הזוג/אדם)
-    var parentEl =
-      nc.querySelector(".tf-couple") || nc.querySelector(".tf-person");
-    if (!parentEl) return;
-    var pRect = parentEl.getBoundingClientRect();
-    var parentX = pRect.left + pRect.width / 2 - wRect.left;
-    var parentY = pRect.bottom - wRect.top;
-
-    // מיקום כל ילד (חלק עליון)
-    // מיקום כל ילד (חלק עליון)
-    // מיקום כל ילד (חלק עליון) - תיקון כפילות
-    var ms = App.getMembers();
-    var parentPersonIds = [];
-    var ncPersons = nc.querySelectorAll(".tf-person");
-    ncPersons.forEach(function (p) {
-      var pid = p.getAttribute("data-member-id");
-      if (pid) parentPersonIds.push(pid);
-    });
-
-    var childPoints = branches
-      .map(function (branch) {
-        var firstTree = branch.querySelector(":scope > .tf-tree");
-        if (!firstTree) return null;
-        var firstNc = firstTree.querySelector(":scope > .tf-nc");
-        if (!firstNc) return null;
-
-        // מציאת הילד האמיתי - זה שה-parentId שלו מצביע על אחד מההורים למעלה
-        var childPerson = null;
-        var childMember = null;
-        var allPersons = firstNc.querySelectorAll(".tf-person");
-
-        allPersons.forEach(function (p) {
-          if (childPerson) return; // כבר מצאנו
-          var mid = p.getAttribute("data-member-id");
-          if (!mid) return;
-          var member = null;
-          for (var j = 0; j < ms.length; j++) {
-            if (ms[j].id === mid) {
-              member = ms[j];
-              break;
-            }
-          }
-          if (!member) return;
-
-          // בדיקה: האם אחד מההורים של האדם הזה נמצא ב-nc למעלה?
-          var isChildOfParent = false;
-          if (
-            member.parentId &&
-            parentPersonIds.indexOf(member.parentId) !== -1
-          )
-            isChildOfParent = true;
-          if (
-            member.parentId2 &&
-            parentPersonIds.indexOf(member.parentId2) !== -1
-          )
-            isChildOfParent = true;
-
-          if (isChildOfParent) {
-            childPerson = p;
-            childMember = member;
-          }
-        });
-
-        // אם לא מצאנו דרך הורים, קח את הראשון (fallback)
-        if (!childPerson) {
-          childPerson = firstNc.querySelector(".tf-person");
-          if (childPerson) {
-            var mid = childPerson.getAttribute("data-member-id");
-            for (var j = 0; j < ms.length; j++) {
-              if (ms[j].id === mid) {
-                childMember = ms[j];
-                break;
-              }
-            }
-          }
-        }
-        if (!childPerson) return null;
-
-        var cRect = childPerson.getBoundingClientRect();
-        var cx = cRect.left + cRect.width / 2 - wRect.left;
-        var cy = cRect.top - wRect.top;
-
-        // חיבור להורה ספציפי - רק אם יש בדיוק הורה אחד
-        var specificParentX = null;
-        if (childMember && nc.querySelector(".tf-couple")) {
-          var hasP1 =
-            childMember.parentId &&
-            parentPersonIds.indexOf(childMember.parentId) !== -1;
-          var hasP2 =
-            childMember.parentId2 &&
-            parentPersonIds.indexOf(childMember.parentId2) !== -1;
-
-          if (hasP1 && !hasP2) {
-            var el = nc.querySelector(
-              '.tf-person[data-member-id="' + childMember.parentId + '"]'
-            );
-            if (el) {
-              var r = el.getBoundingClientRect();
-              specificParentX = r.left + r.width / 2 - wRect.left;
-            }
-          } else if (hasP2 && !hasP1) {
-            var el = nc.querySelector(
-              '.tf-person[data-member-id="' + childMember.parentId2 + '"]'
-            );
-            if (el) {
-              var r = el.getBoundingClientRect();
-              specificParentX = r.left + r.width / 2 - wRect.left;
-            }
-          }
-          // שני הורים בזוג = null = אמצע
-        }
-
-        return { x: cx, y: cy, specificParentX: specificParentX };
-      })
-      .filter(Boolean);
-
-    if (childPoints.length === 0) return;
-
-    // חישוב נקודת אמצע Y
-    var minChildY = Math.min.apply(
-      null,
-      childPoints.map(function (p) {
-        return p.y;
-      })
-    );
-    var midY = parentY + (minChildY - parentY) / 2;
-
-    // קיבוץ ילדים לפי הורה
-    var groups = {};
-    childPoints.forEach(function (cp) {
-      var px = cp.specificParentX !== null ? cp.specificParentX : parentX;
-      var key = Math.round(px);
-      if (!groups[key]) groups[key] = { parentX: px, children: [] };
-      groups[key].children.push(cp);
-    });
-
-    var groupKeys = Object.keys(groups);
-    groupKeys.forEach(function (key) {
-      var grp = groups[key];
-      var gpx = grp.parentX;
-
-      if (grp.children.length === 1) {
-        var cp = grp.children[0];
-        // ילד יחיד - path מעוגל שלם
-        svg.appendChild(createSmoothPath(gpx, parentY, cp.x, cp.y, midY));
-      } else {
-        // מספר ילדים מאותו הורה
-        var r = RADIUS;
-        var childXs = grp.children.map(function (c) {
-          return c.x;
-        });
-
-        // קו אנכי מההורה למטה עד midY
-        svg.appendChild(createLine(gpx, parentY, gpx, midY));
-
-        // לכל ילד: path מעוגל מ-midY למטה
-        grp.children.forEach(function (cp) {
-          var cx = cp.x;
-          var cr = Math.min(
-            r,
-            Math.abs(cx - gpx) / 2,
-            Math.abs(cp.y - midY) / 2
-          );
-
-          if (Math.abs(cx - gpx) < 3) {
-            // ישר מתחת להורה - קו ישר
-            svg.appendChild(createLine(cx, midY, cx, cp.y));
-          } else {
-            // path מעוגל: אופקי מ-gpx עד cx, ואז למטה
-            var dir = cx > gpx ? 1 : -1;
-            var pathD = "M " + gpx + " " + midY;
-            pathD += " L " + (cx - cr * dir) + " " + midY;
-            pathD += " Q " + cx + " " + midY + " " + cx + " " + (midY + cr);
-            pathD += " L " + cx + " " + cp.y;
-
-            var el = document.createElementNS(
-              "http://www.w3.org/2000/svg",
-              "path"
-            );
-            el.setAttribute("d", pathD);
-            el.setAttribute("stroke", LINE_COLOR);
-            el.setAttribute("stroke-width", LINE_WIDTH);
-            el.setAttribute("fill", "none");
-            el.setAttribute("stroke-linecap", "round");
-            el.setAttribute("stroke-linejoin", "round");
-            svg.appendChild(el);
-          }
-        });
-      }
-    });
-  }
-
-  // יצירת path חלק בסגנון Visio - לילד יחיד
   function createSmoothPath(x1, y1, x2, y2, midY) {
     var r = Math.min(
       RADIUS,
@@ -977,9 +659,7 @@ const TreeRenderer = (() => {
       Math.abs(y2 - midY) / 2
     );
     var path;
-
     if (Math.abs(x1 - x2) < 3) {
-      // ישר למטה
       path = "M " + x1 + " " + y1 + " L " + x1 + " " + y2;
     } else {
       var dir = x2 > x1 ? 1 : -1;
@@ -990,7 +670,6 @@ const TreeRenderer = (() => {
       path += " Q " + x2 + " " + midY + " " + x2 + " " + (midY + r);
       path += " L " + x2 + " " + y2;
     }
-
     var el = document.createElementNS("http://www.w3.org/2000/svg", "path");
     el.setAttribute("d", path);
     el.setAttribute("stroke", LINE_COLOR);
@@ -1013,19 +692,75 @@ const TreeRenderer = (() => {
     return el;
   }
 
-  // Resize & tab switch
+  // =============================================
+  // FULLSCREEN - תיקון למובייל
+  // =============================================
+  function toggleFullscreen() {
+    var card = document.querySelector(".tree-page-card");
+    if (!card) return;
+    var isFullscreen = card.classList.contains("tree-fullscreen");
+
+    if (isFullscreen) {
+      card.classList.remove("tree-fullscreen");
+      var closeBtn = card.querySelector(".fullscreen-close-btn");
+      if (closeBtn) closeBtn.remove();
+      document.getElementById("fullscreenBtn").textContent = "⛶";
+      document.body.style.overflow = "";
+      // יציאה מ-native fullscreen אם נדרש
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(function () {});
+      } else if (document.webkitFullscreenElement) {
+        document.webkitExitFullscreen();
+      }
+    } else {
+      card.classList.add("tree-fullscreen");
+      document.getElementById("fullscreenBtn").textContent = "✕";
+      document.body.style.overflow = "hidden";
+
+      // כפתור יציאה
+      var closeBtn = document.createElement("button");
+      closeBtn.className = "fullscreen-close-btn";
+      closeBtn.textContent = "✕";
+      closeBtn.onclick = toggleFullscreen;
+      card.appendChild(closeBtn);
+
+      // native fullscreen API (עובד גם במובייל)
+      try {
+        var elem = card;
+        if (elem.requestFullscreen) {
+          elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) {
+          elem.webkitRequestFullscreen(); // Safari/iOS
+        } else if (elem.msRequestFullscreen) {
+          elem.msRequestFullscreen();
+        }
+      } catch (e) {
+        console.log("Fullscreen API not available:", e);
+      }
+    }
+
+    // ציור מחדש
+    setTimeout(function () {
+      drawConnectorsAtScale1();
+    }, 300);
+  }
+
+  // =============================================
+  // EVENTS - Resize, Pan, Zoom, Pinch
+  // =============================================
   var _rt;
   window.addEventListener("resize", function () {
     clearTimeout(_rt);
-    _rt = setTimeout(drawOverlaySVG, 200);
+    _rt = setTimeout(function () {
+      drawConnectorsAtScale1();
+    }, 300);
   });
 
-  // Pan & Zoom
   document.addEventListener("DOMContentLoaded", function () {
     var c = document.getElementById("treeContainer");
     if (!c) return;
 
-    // Zoom with Ctrl+Wheel
+    // Ctrl+Wheel zoom
     c.addEventListener(
       "wheel",
       function (e) {
@@ -1037,13 +772,12 @@ const TreeRenderer = (() => {
       { passive: false }
     );
 
-    // Pan (drag)
+    // Mouse Pan
     var isPanning = false,
       startX = 0,
       startY = 0,
       scrollStartX = 0,
       scrollStartY = 0;
-
     c.addEventListener("mousedown", function (e) {
       if (e.target.closest(".tf-person") || e.target.closest("button")) return;
       isPanning = true;
@@ -1054,13 +788,11 @@ const TreeRenderer = (() => {
       c.style.cursor = "grabbing";
       e.preventDefault();
     });
-
     document.addEventListener("mousemove", function (e) {
       if (!isPanning) return;
       c.scrollLeft = scrollStartX - (e.clientX - startX);
       c.scrollTop = scrollStartY - (e.clientY - startY);
     });
-
     document.addEventListener("mouseup", function () {
       if (isPanning) {
         isPanning = false;
@@ -1068,8 +800,7 @@ const TreeRenderer = (() => {
       }
     });
 
-    // Touch support
-    // Touch support - Pan + Pinch-to-Zoom
+    // Touch - Pan + Pinch-to-Zoom
     var initialPinchDistance = 0;
     var initialPinchZoom = 1;
 
@@ -1078,15 +809,12 @@ const TreeRenderer = (() => {
       function (e) {
         if (e.target.closest(".tf-person") || e.target.closest("button"))
           return;
-
         if (e.touches.length === 2) {
-          // Pinch start
           isPanning = false;
           initialPinchDistance = getPinchDistance(e.touches);
           initialPinchZoom = currentZoom;
           e.preventDefault();
         } else if (e.touches.length === 1) {
-          // Pan start
           isPanning = true;
           startX = e.touches[0].clientX;
           startY = e.touches[0].clientY;
@@ -1101,7 +829,6 @@ const TreeRenderer = (() => {
       "touchmove",
       function (e) {
         if (e.touches.length === 2) {
-          // Pinch zoom
           e.preventDefault();
           var currentDistance = getPinchDistance(e.touches);
           if (initialPinchDistance > 0) {
@@ -1110,10 +837,9 @@ const TreeRenderer = (() => {
               MIN_ZOOM,
               Math.min(MAX_ZOOM, initialPinchZoom * scale)
             );
-            applyZoom();
+            applyZoomOnly();
           }
         } else if (isPanning && e.touches.length === 1) {
-          // Pan
           c.scrollLeft = scrollStartX - (e.touches[0].clientX - startX);
           c.scrollTop = scrollStartY - (e.touches[0].clientY - startY);
         }
@@ -1122,14 +848,8 @@ const TreeRenderer = (() => {
     );
 
     c.addEventListener("touchend", function (e) {
-      if (e.touches.length < 2) {
-        initialPinchDistance = 0;
-      }
-      if (e.touches.length === 0) {
-        isPanning = false;
-        // ציור מחדש של קווים אחרי זום
-        drawOverlaySVG();
-      }
+      if (e.touches.length < 2) initialPinchDistance = 0;
+      if (e.touches.length === 0) isPanning = false;
     });
 
     function getPinchDistance(touches) {
@@ -1138,54 +858,22 @@ const TreeRenderer = (() => {
       return Math.sqrt(dx * dx + dy * dy);
     }
 
-    c.addEventListener(
-      "touchmove",
-      function (e) {
-        if (!isPanning || e.touches.length !== 1) return;
-        c.scrollLeft = scrollStartX - (e.touches[0].clientX - startX);
-        c.scrollTop = scrollStartY - (e.touches[0].clientY - startY);
-      },
-      { passive: true }
-    );
-
-    c.addEventListener("touchend", function () {
-      isPanning = false;
+    // Listen for native fullscreen exit
+    document.addEventListener("fullscreenchange", function () {
+      if (!document.fullscreenElement) {
+        var card = document.querySelector(".tree-page-card");
+        if (card && card.classList.contains("tree-fullscreen")) {
+          card.classList.remove("tree-fullscreen");
+          var closeBtn = card.querySelector(".fullscreen-close-btn");
+          if (closeBtn) closeBtn.remove();
+          var btn = document.getElementById("fullscreenBtn");
+          if (btn) btn.textContent = "⛶";
+          document.body.style.overflow = "";
+        }
+      }
     });
   });
-  function toggleFullscreen() {
-    var card = document.querySelector(".tree-page-card");
-    if (!card) return;
 
-    var isFullscreen = card.classList.contains("tree-fullscreen");
-
-    if (isFullscreen) {
-      // יציאה ממסך מלא
-      card.classList.remove("tree-fullscreen");
-      var closeBtn = card.querySelector(".fullscreen-close-btn");
-      if (closeBtn) closeBtn.remove();
-      document.getElementById("fullscreenBtn").textContent = "⛶";
-      document.body.style.overflow = "";
-    } else {
-      // כניסה למסך מלא
-      card.classList.add("tree-fullscreen");
-      document.getElementById("fullscreenBtn").textContent = "✕";
-      document.body.style.overflow = "hidden";
-
-      // כפתור יציאה
-      var closeBtn = document.createElement("button");
-      closeBtn.className = "fullscreen-close-btn";
-      closeBtn.textContent = "✕";
-      closeBtn.onclick = toggleFullscreen;
-      card.appendChild(closeBtn);
-    }
-
-    // ציור מחדש
-    requestAnimationFrame(function () {
-      requestAnimationFrame(function () {
-        drawOverlaySVG();
-      });
-    });
-  }
   return {
     setLevel: setLevel,
     populateRootSelect: populateRootSelect,
@@ -1197,7 +885,7 @@ const TreeRenderer = (() => {
     exportAsImage: exportAsImage,
     exportAsPDF: exportAsPDF,
     toggleExportMenu: toggleExportMenu,
-    redrawConnectors: drawOverlaySVG,
     toggleFullscreen: toggleFullscreen,
+    redrawConnectors: drawConnectorsAtScale1,
   };
 })();
