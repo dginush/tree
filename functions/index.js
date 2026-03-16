@@ -50,7 +50,6 @@ exports.sendDailyNotifications = onSchedule(
           if (parts.length !== 3) return;
           var bDay = parseInt(parts[0]);
           var bMonth = parseInt(parts[1]) - 1;
-
           if (bDay === todayDay && bMonth === todayMonth) {
             var age = today.getFullYear() - parseInt(parts[2]);
             sendToTokens(tokens, {
@@ -61,7 +60,7 @@ exports.sendDailyNotifications = onSchedule(
           }
         });
       } catch (err) {
-        console.error("Birthday check error for tree " + treeId + ":", err);
+        console.error("Birthday check error:", err);
       }
 
       try {
@@ -75,7 +74,6 @@ exports.sendDailyNotifications = onSchedule(
           if (parts.length !== 3) return;
           var evDay = parseInt(parts[0]);
           var evMonth = parseInt(parts[1]) - 1;
-
           var isInWeek = false;
           if (ev.recurring === "yearly") {
             isInWeek = evDay === weekDay && evMonth === weekMonth;
@@ -86,7 +84,6 @@ exports.sendDailyNotifications = onSchedule(
               evMonth === weekMonth &&
               evYear === nextWeek.getFullYear();
           }
-
           if (isInWeek) {
             sendToTokens(tokens, {
               title: "📅 אירוע בעוד שבוע!",
@@ -95,7 +92,7 @@ exports.sendDailyNotifications = onSchedule(
           }
         });
       } catch (err) {
-        console.error("Events check error for tree " + treeId + ":", err);
+        console.error("Events check error:", err);
       }
     }
   }
@@ -115,15 +112,14 @@ async function sendToTokens(tokens, notification) {
         response.failureCount +
         " failures"
     );
-
     if (response.failureCount > 0) {
       var db = admin.firestore();
       response.responses.forEach(async function (resp, idx) {
         if (!resp.success) {
-          var errorCode = resp.error ? resp.error.code : "";
+          var code = resp.error ? resp.error.code : "";
           if (
-            errorCode === "messaging/invalid-registration-token" ||
-            errorCode === "messaging/registration-token-not-registered"
+            code === "messaging/invalid-registration-token" ||
+            code === "messaging/registration-token-not-registered"
           ) {
             var snap = await db
               .collection("fcmTokens")
