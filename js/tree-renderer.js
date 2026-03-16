@@ -1067,12 +1067,24 @@ const TreeRenderer = (() => {
     });
 
     // Touch support
+    // Touch support - Pan + Pinch-to-Zoom
+    var initialPinchDistance = 0;
+    var initialPinchZoom = 1;
+
     c.addEventListener(
       "touchstart",
       function (e) {
         if (e.target.closest(".tf-person") || e.target.closest("button"))
           return;
-        if (e.touches.length === 1) {
+
+        if (e.touches.length === 2) {
+          // Pinch start
+          isPanning = false;
+          initialPinchDistance = getPinchDistance(e.touches);
+          initialPinchZoom = currentZoom;
+          e.preventDefault();
+        } else if (e.touches.length === 1) {
+          // Pan start
           isPanning = true;
           startX = e.touches[0].clientX;
           startY = e.touches[0].clientY;
@@ -1080,8 +1092,49 @@ const TreeRenderer = (() => {
           scrollStartY = c.scrollTop;
         }
       },
-      { passive: true }
+      { passive: false }
     );
+
+    c.addEventListener(
+      "touchmove",
+      function (e) {
+        if (e.touches.length === 2) {
+          // Pinch zoom
+          e.preventDefault();
+          var currentDistance = getPinchDistance(e.touches);
+          if (initialPinchDistance > 0) {
+            var scale = currentDistance / initialPinchDistance;
+            currentZoom = Math.max(
+              MIN_ZOOM,
+              Math.min(MAX_ZOOM, initialPinchZoom * scale)
+            );
+            applyZoom();
+          }
+        } else if (isPanning && e.touches.length === 1) {
+          // Pan
+          c.scrollLeft = scrollStartX - (e.touches[0].clientX - startX);
+          c.scrollTop = scrollStartY - (e.touches[0].clientY - startY);
+        }
+      },
+      { passive: false }
+    );
+
+    c.addEventListener("touchend", function (e) {
+      if (e.touches.length < 2) {
+        initialPinchDistance = 0;
+      }
+      if (e.touches.length === 0) {
+        isPanning = false;
+        // ציור מחדש של קווים אחרי זום
+        drawOverlaySVG();
+      }
+    });
+
+    function getPinchDistance(touches) {
+      var dx = touches[0].clientX - touches[1].clientX;
+      var dy = touches[0].clientY - touches[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
 
     c.addEventListener(
       "touchmove",
