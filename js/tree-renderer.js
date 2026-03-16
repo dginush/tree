@@ -584,22 +584,24 @@ const TreeRenderer = (() => {
     }
     if (branches.length === 0) return;
 
-    // גובה ה-gap
-    var gapRect = gap.getBoundingClientRect();
-    var gapH = gapRect.height;
-    var gapW = gapRect.width;
-    var gapLeft = gapRect.left;
-    var gapTop = gapRect.top;
+    // תיקון zoom: getBoundingClientRect מחזיר ערכים מוכפלים ב-scale
+    var z = currentZoom || 1;
 
-    // מיקום ההורה - תחתית הזוג/אדם
+    var gapRect = gap.getBoundingClientRect();
+    var gapH = gapRect.height / z;
+    var gapW = gapRect.width / z;
+    var gapLeft = gapRect.left / z;
+    var gapTop = gapRect.top / z;
+
+    // מיקום ההורה
     var parentEl =
       nc.querySelector(".tf-couple") || nc.querySelector(".tf-person");
     if (!parentEl) return;
     var pRect = parentEl.getBoundingClientRect();
-    var parentX = pRect.left + pRect.width / 2 - gapLeft;
-    var parentY = 0; // תחילת ה-gap
+    var parentX = (pRect.left + pRect.width / 2) / z - gapLeft;
+    var parentY = 0;
 
-    // מיקום כל ילד - חלק עליון
+    // מיקום כל ילד
     var ms = App.getMembers();
     var parentPersonIds = [];
     nc.querySelectorAll(".tf-person").forEach(function (p) {
@@ -614,7 +616,6 @@ const TreeRenderer = (() => {
         var firstNc = firstTree.querySelector(":scope > .tf-nc");
         if (!firstNc) return null;
 
-        // מציאת הילד האמיתי
         var childPerson = null;
         var childMember = null;
         var allPersons = firstNc.querySelectorAll(".tf-person");
@@ -663,10 +664,9 @@ const TreeRenderer = (() => {
         if (!childPerson) return null;
 
         var cRect = childPerson.getBoundingClientRect();
-        var cx = cRect.left + cRect.width / 2 - gapLeft;
-        var cy = gapH; // תחתית ה-gap
+        var cx = (cRect.left + cRect.width / 2) / z - gapLeft;
+        var cy = gapH;
 
-        // חיבור להורה ספציפי
         var specificParentX = null;
         if (childMember && nc.querySelector(".tf-couple")) {
           var hasP1 =
@@ -681,7 +681,7 @@ const TreeRenderer = (() => {
             );
             if (el) {
               var r = el.getBoundingClientRect();
-              specificParentX = r.left + r.width / 2 - gapLeft;
+              specificParentX = (r.left + r.width / 2) / z - gapLeft;
             }
           } else if (hasP2 && !hasP1) {
             var el = nc.querySelector(
@@ -689,7 +689,7 @@ const TreeRenderer = (() => {
             );
             if (el) {
               var r = el.getBoundingClientRect();
-              specificParentX = r.left + r.width / 2 - gapLeft;
+              specificParentX = (r.left + r.width / 2) / z - gapLeft;
             }
           }
         }
@@ -700,7 +700,6 @@ const TreeRenderer = (() => {
 
     if (childPoints.length === 0) return;
 
-    // יצירת SVG בתוך ה-gap
     var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("class", "tf-connector-svg");
     svg.style.cssText =
@@ -710,7 +709,6 @@ const TreeRenderer = (() => {
 
     var midY = gapH / 2;
 
-    // קיבוץ ילדים לפי הורה
     var groups = {};
     childPoints.forEach(function (cp) {
       var px = cp.specificParentX !== null ? cp.specificParentX : parentX;
@@ -761,7 +759,6 @@ const TreeRenderer = (() => {
       }
     });
 
-    // הכנסת ה-SVG בתוך ה-gap (לא כ-overlay)
     gap.style.position = "relative";
     gap.appendChild(svg);
   }
