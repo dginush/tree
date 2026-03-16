@@ -1,22 +1,27 @@
-// בדיקה 1: האם יש הרשאה
-console.log('Permission:', Notification.permission);
+C:\Users\qadem\Downloads\Compressed\TREE>firebase deploy --only functions:rules
 
-// בדיקה 2: האם Service Worker רשום
-navigator.serviceWorker.getRegistrations().then(r => console.log('SW:', r.length, r));
+=== Deploying to 'family-tree-d41a6'...
 
-// בדיקה 3: נסה לקבל טוקן ידנית
-PushNotifications.requestPermission();
+i  deploying functions
+i  functions: preparing codebase default for deployment
+i  functions: ensuring required API cloudfunctions.googleapis.com is enabled...
+i  functions: ensuring required API cloudbuild.googleapis.com is enabled...
+i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled...
+!  functions: Runtime Node.js 20 will be deprecated on 2026-04-30 and will be decommissioned on 2026-10-30, after which you will not be able to deploy without upgrading. Consider upgrading now to avoid disruption. See https://cloud.google.com/functions/docs/runtime-support for full details on the lifecycle policy
+i  functions: Loading and analyzing source code for codebase default to determine what to deploy
+Serving at port 8104
 
+i  extensions: ensuring required API firebaseextensions.googleapis.com is enabled...
+i  functions: preparing functions directory for uploading...
+i  functions: packaged C:\Users\qadem\Downloads\Compressed\TREE\functions (36.73 KB) for uploading
+i  functions: ensuring required API cloudscheduler.googleapis.com is enabled...
+i  functions: ensuring required API run.googleapis.com is enabled...
+i  functions: ensuring required API eventarc.googleapis.com is enabled...
+i  functions: ensuring required API pubsub.googleapis.com is enabled...
+i  functions: ensuring required API storage.googleapis.com is enabled...
+i  functions: generating the service identity for pubsub.googleapis.com...
+i  functions: generating the service identity for eventarc.googleapis.com...
+
+Error: No function matches the filter: default:rules
 
 Save token error: FirebaseError: Missing or insufficient permissions.
-console.log('Permission:', Notification.permission);
-
-VM5372:1 Permission: granted
-undefined
-navigator.serviceWorker.getRegistrations().then(r => console.log('SW:', r.length, r));
-
-Promise {<pending>}
-VM5377:1 SW: 1 [ServiceWorkerRegistration]
-PushNotifications.requestPermission();
-Promise {<pending>}
-push-notifications.js:95 Save token error: FirebaseError: Missing or insufficient permissions.
