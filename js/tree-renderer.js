@@ -125,7 +125,12 @@ const TreeRenderer = (() => {
       w.style.transformOrigin = "top right";
     }
     if (d) d.textContent = Math.round(currentZoom * 100) + "%";
-    drawOverlaySVG();
+    // ציור מחדש של קווים אחרי שהדפדפן מעדכן layout
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        drawOverlaySVG();
+      });
+    });
   }
 
   // Export
