@@ -25,3 +25,5 @@ i  functions: generating the service identity for eventarc.googleapis.com...
 Error: No function matches the filter: default:rules
 
 Save token error: FirebaseError: Missing or insufficient permissions.
+
+history-manager.js:21 History load error: FirebaseError: Missing or insufficient permissions.
