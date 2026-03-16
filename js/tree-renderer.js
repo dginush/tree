@@ -1152,7 +1152,40 @@ const TreeRenderer = (() => {
       isPanning = false;
     });
   });
+  function toggleFullscreen() {
+    var card = document.querySelector(".tree-page-card");
+    if (!card) return;
 
+    var isFullscreen = card.classList.contains("tree-fullscreen");
+
+    if (isFullscreen) {
+      // יציאה ממסך מלא
+      card.classList.remove("tree-fullscreen");
+      var closeBtn = card.querySelector(".fullscreen-close-btn");
+      if (closeBtn) closeBtn.remove();
+      document.getElementById("fullscreenBtn").textContent = "⛶";
+      document.body.style.overflow = "";
+    } else {
+      // כניסה למסך מלא
+      card.classList.add("tree-fullscreen");
+      document.getElementById("fullscreenBtn").textContent = "✕";
+      document.body.style.overflow = "hidden";
+
+      // כפתור יציאה
+      var closeBtn = document.createElement("button");
+      closeBtn.className = "fullscreen-close-btn";
+      closeBtn.textContent = "✕";
+      closeBtn.onclick = toggleFullscreen;
+      card.appendChild(closeBtn);
+    }
+
+    // ציור מחדש
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        drawOverlaySVG();
+      });
+    });
+  }
   return {
     setLevel: setLevel,
     populateRootSelect: populateRootSelect,
@@ -1165,5 +1198,6 @@ const TreeRenderer = (() => {
     exportAsPDF: exportAsPDF,
     toggleExportMenu: toggleExportMenu,
     redrawConnectors: drawOverlaySVG,
+    toggleFullscreen: toggleFullscreen,
   };
 })();
