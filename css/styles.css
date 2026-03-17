@@ -2269,12 +2269,6 @@ body.dark-mode #FamilyChart {
 .tree-fullscreen #FamilyChart {
   min-height: calc(100vh - 120px) !important;
 }
-
-/* הקטנת padding של כרטיסים */
 #FamilyChart .card_cont {
-  padding: 4px !important;
-}
-
-#FamilyChart .card-inner {
-  padding: 2px !important;
+  padding: 8px !important;
 }
