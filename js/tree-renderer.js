@@ -58,7 +58,16 @@ const TreeRenderer = (() => {
           "first name": m.firstName || "",
           "last name": m.lastName || "",
           birthday: m.birthDate || "",
-          avatar: m.photo || "",
+          avatar:
+            m.photo ||
+            "data:image/svg+xml," +
+              encodeURIComponent(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><rect width="60" height="60" fill="' +
+                  (m.gender === "male" ? "#1976D2" : "#E91E63") +
+                  '"/><text x="30" y="38" text-anchor="middle" fill="white" font-size="24" font-family="Arial">' +
+                  ((m.firstName || "?")[0] + (m.lastName || "?")[0]) +
+                  "</text></svg>"
+              ),
           gender: m.gender === "male" ? "M" : "F",
         },
         rels: {},
