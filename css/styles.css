@@ -2231,21 +2231,15 @@ body.dark-mode .share-member-row {
   }
 }
 /* ============================================
-   Family Chart - Line Colors Fix
+   Family Chart - Connector Lines Only
    ============================================ */
-#FamilyChart path,
-#FamilyChart line,
-#FamilyChart .link,
 #FamilyChart .link path {
-  stroke: #555 !important;
-  stroke-width: 2px !important;
+  stroke: #888;
+  stroke-width: 2px;
 }
 
-body.dark-mode #FamilyChart path,
-body.dark-mode #FamilyChart line,
-body.dark-mode #FamilyChart .link,
 body.dark-mode #FamilyChart .link path {
-  stroke: #aaa !important;
+  stroke: #aaa;
 }
 
 /* רקע בהיר במצב בהיר, כהה במצב כהה */
@@ -2256,6 +2250,7 @@ body.dark-mode #FamilyChart .link path {
 body.dark-mode #FamilyChart {
   background-color: #1a1a2e !important;
 }
+
 /* ============================================
    Tree Container - Final Fix
    ============================================ */
