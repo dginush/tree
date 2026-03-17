@@ -1,8 +1,7 @@
 const TreeRenderer = (() => {
   var lv = 100;
-  var currentZoom = 1;
   var chart = null;
-  var chartContainer = null;
+  var card = null;
 
   function setLevel(n, el) {
     lv = n;
@@ -35,16 +34,14 @@ const TreeRenderer = (() => {
     else s.value = ms.length ? ms[0].id : "";
   }
 
-  function buildFamilyChartData() {
+  function buildData() {
     var ms = App.getMembers();
     var sdc = document.getElementById("showDeceased")?.checked ?? true;
     var rootId = document.getElementById("treeRoot")?.value;
-
     if (!ms.length || !rootId) return [];
 
-    // המרת הנתונים לפורמט של family-chart
-    var data = [];
     var visited = {};
+    var data = [];
 
     function addPerson(id, depth) {
       if (!id || visited[id] || depth > lv) return;
@@ -61,31 +58,29 @@ const TreeRenderer = (() => {
           "first name": m.firstName || "",
           "last name": m.lastName || "",
           birthday: m.birthDate || "",
-          gender: m.gender === "male" ? "M" : "F",
           avatar: m.photo || "",
+          gender: m.gender === "male" ? "M" : "F",
         },
         rels: {},
       };
 
       // הורים
       if (m.parentId) {
-        var father = ms.find(function (x) {
+        var p1 = ms.find(function (x) {
           return x.id === m.parentId;
         });
-        if (father && father.gender === "male") {
-          person.rels.father = m.parentId;
-        } else if (father && father.gender === "female") {
-          person.rels.mother = m.parentId;
+        if (p1) {
+          if (p1.gender === "male") person.rels.father = m.parentId;
+          else person.rels.mother = m.parentId;
         }
       }
       if (m.parentId2) {
-        var mother = ms.find(function (x) {
+        var p2 = ms.find(function (x) {
           return x.id === m.parentId2;
         });
-        if (mother && mother.gender === "female") {
-          person.rels.mother = m.parentId2;
-        } else if (mother && mother.gender === "male") {
-          person.rels.father = m.parentId2;
+        if (p2) {
+          if (p2.gender === "female") person.rels.mother = m.parentId2;
+          else person.rels.father = m.parentId2;
         }
       }
 
@@ -94,16 +89,31 @@ const TreeRenderer = (() => {
         var spouse = ms.find(function (x) {
           return x.id === m.spouseId;
         });
-        if (spouse) {
+        if (spouse && (spouse.status !== "deceased" || sdc)) {
           person.rels.spouses = [m.spouseId];
         }
       }
 
       // ילדים
       var children = ms.filter(function (c) {
+        if (c.status === "deceased" && !sdc) return false;
         return c.parentId === m.id || c.parentId2 === m.id;
       });
       if (children.length > 0) {
+        // מיון לפי גיל
+        children.sort(function (a, b) {
+          var da = a.birthDate ? a.birthDate.split("/") : null;
+          var db = b.birthDate ? b.birthDate.split("/") : null;
+          var dateA =
+            da && da.length === 3
+              ? new Date(parseInt(da[2]), parseInt(da[1]) - 1, parseInt(da[0]))
+              : new Date(9999, 0, 1);
+          var dateB =
+            db && db.length === 3
+              ? new Date(parseInt(db[2]), parseInt(db[1]) - 1, parseInt(db[0]))
+              : new Date(9999, 0, 1);
+          return dateA - dateB;
+        });
         person.rels.children = children.map(function (c) {
           return c.id;
         });
@@ -111,18 +121,12 @@ const TreeRenderer = (() => {
 
       data.push(person);
 
-      // הוסף את בן/בת הזוג
-      if (m.spouseId && !visited[m.spouseId]) {
-        addPerson(m.spouseId, depth);
-      }
-
+      // הוסף בן/בת זוג
+      if (m.spouseId && !visited[m.spouseId]) addPerson(m.spouseId, depth);
       // הוסף ילדים
       children.forEach(function (c) {
-        if (!visited[c.id]) {
-          addPerson(c.id, depth + 1);
-        }
+        if (!visited[c.id]) addPerson(c.id, depth + 1);
       });
-
       // הוסף הורים
       if (m.parentId && !visited[m.parentId]) addPerson(m.parentId, depth - 1);
       if (m.parentId2 && !visited[m.parentId2])
@@ -130,36 +134,6 @@ const TreeRenderer = (() => {
     }
 
     addPerson(rootId, 0);
-
-    // מיון ילדים לפי גיל
-    data.forEach(function (person) {
-      if (person.rels.children && person.rels.children.length > 1) {
-        person.rels.children.sort(function (aId, bId) {
-          var a = ms.find(function (x) {
-            return x.id === aId;
-          });
-          var b = ms.find(function (x) {
-            return x.id === bId;
-          });
-          if (!a || !a.birthDate) return 1;
-          if (!b || !b.birthDate) return -1;
-          var da = a.birthDate.split("/");
-          var db = b.birthDate.split("/");
-          var dateA = new Date(
-            parseInt(da[2]),
-            parseInt(da[1]) - 1,
-            parseInt(da[0])
-          );
-          var dateB = new Date(
-            parseInt(db[2]),
-            parseInt(db[1]) - 1,
-            parseInt(db[0])
-          );
-          return dateA - dateB;
-        });
-      }
-    });
-
     return data;
   }
 
@@ -167,128 +141,137 @@ const TreeRenderer = (() => {
     var container = document.getElementById("FamilyChart");
     if (!container) return;
 
-    var data = buildFamilyChartData();
+    var data = buildData();
     if (!data.length) {
       container.innerHTML =
         '<div class="empty-state"><div class="icon">🌴</div><h3>בחרו שורש לעץ</h3></div>';
-      if (chart) {
-        chart = null;
-      }
+      chart = null;
       return;
     }
 
-    container.innerHTML = "";
-
     var rootId = document.getElementById("treeRoot")?.value;
-    var ms = App.getMembers();
+    container.innerHTML = "";
+    container.className = "f3";
+    container.style.width = "100%";
+    container.style.height = "100%";
+    container.style.minHeight = "500px";
 
     try {
-      chart = FamilyChart({
-        id: "FamilyChart",
-        data: data,
-        main_id: rootId,
-        node_separation: 250,
-        level_separation: 150,
-        card_dim: {
-          w: 220,
-          h: 70,
-          text_x: 75,
-          text_y: 15,
-          img_w: 60,
-          img_h: 60,
-          img_x: 5,
-          img_y: 5,
-        },
-        card_display: [
-          function (d) {
-            return d.data["first name"] + " " + d.data["last name"];
-          },
-          function (d) {
-            if (!d.data.birthday) return "";
-            var age = App.calculateAge(d.data.birthday);
-            return d.data.birthday + (age !== null ? " (גיל " + age + ")" : "");
-          },
-        ],
-        mini_tree: true,
-        transition_time: 400,
-      });
+      // בדיקה שf3 זמין
+      if (typeof f3 === "undefined") {
+        container.innerHTML =
+          '<div class="empty-state"><div class="icon">⏳</div><h3>טוען ספרייה...</h3><p>רענן את הדף</p></div>';
+        return;
+      }
+
+      chart = f3
+        .createChart("#FamilyChart", data)
+        .setTransitionTime(500)
+        .setCardXSpacing(250)
+        .setCardYSpacing(150)
+        .setSingleParentEmptyCard(false)
+        .setOrientationVertical();
+
+      card = chart
+        .setCardHtml()
+        .setCardDisplay([["first name", "last name"], ["birthday"]])
+        .setMiniTree(true)
+        .setStyle("imageRect")
+        .setOnHoverPathToMain();
+
+      chart.setMainId(rootId);
+      chart.updateTree({ initial: true });
 
       // הוספת אירוע לחיצה על כרטיס
       setTimeout(function () {
-        container.querySelectorAll(".card").forEach(function (card) {
-          card.style.cursor = "pointer";
-          var personId = card.getAttribute("data-id");
-          if (personId) {
-            card.addEventListener("click", function () {
-              App.viewMember(personId);
-            });
-          }
+        container.querySelectorAll(".card").forEach(function (cardEl) {
+          cardEl.style.cursor = "pointer";
+          cardEl.addEventListener("click", function (e) {
+            var datum = d3.select(this).datum();
+            if (datum && datum.data && datum.data.id) {
+              App.viewMember(datum.data.id);
+            }
+          });
         });
-      }, 500);
+      }, 800);
     } catch (err) {
-      console.error("Family chart render error:", err);
+      console.error("Family chart error:", err);
       container.innerHTML =
         '<div class="empty-state"><div class="icon">⚠️</div><h3>שגיאה בטעינת העץ</h3><p>' +
         err.message +
         "</p></div>";
     }
-
-    updateZoomDisplay();
   }
 
   // Zoom
   function zoomIn() {
-    currentZoom = Math.min(2, currentZoom + 0.15);
-    applyZoom();
-  }
-
-  function zoomOut() {
-    currentZoom = Math.max(0.2, currentZoom - 0.15);
-    applyZoom();
-  }
-
-  function zoomReset() {
-    currentZoom = 1;
-    applyZoom();
-  }
-
-  function zoomFit() {
-    var container = document.getElementById("FamilyChart");
-    if (!container) return;
-    var svg = container.querySelector("svg");
-    if (!svg) return;
-    var bbox = svg.getBBox();
-    var cW = container.clientWidth;
-    var cH = container.clientHeight;
-    if (bbox.width && bbox.height) {
-      currentZoom = Math.max(
-        0.2,
-        Math.min(cW / (bbox.width + 100), cH / (bbox.height + 100), 1)
-      );
-    }
-    applyZoom();
-  }
-
-  function applyZoom() {
-    var container = document.getElementById("FamilyChart");
-    if (!container) return;
-    var svg = container.querySelector("svg");
-    if (svg) {
-      var g = svg.querySelector("g");
-      if (g) {
-        var currentTransform = g.getAttribute("transform") || "";
-        // שמור translate קיים
-        var translateMatch = currentTransform.match(/translate\([^)]+\)/);
-        var translate = translateMatch ? translateMatch[0] : "translate(0,0)";
-        g.setAttribute("transform", translate + " scale(" + currentZoom + ")");
+    if (chart && chart.getChart) {
+      var svg = document.querySelector("#FamilyChart svg");
+      if (svg) {
+        var g = svg.querySelector("g");
+        if (g) {
+          var t = d3.zoomTransform(svg);
+          d3.select(svg)
+            .transition()
+            .call(
+              d3.zoom().on("zoom", function (e) {
+                g.setAttribute("transform", e.transform);
+              }).scaleBy,
+              1.3
+            );
+        }
       }
     }
     updateZoomDisplay();
   }
 
+  function zoomOut() {
+    var svg = document.querySelector("#FamilyChart svg");
+    if (svg) {
+      var g = svg.querySelector("g");
+      if (g) {
+        d3.select(svg)
+          .transition()
+          .call(
+            d3.zoom().on("zoom", function (e) {
+              g.setAttribute("transform", e.transform);
+            }).scaleBy,
+            0.7
+          );
+      }
+    }
+    updateZoomDisplay();
+  }
+
+  function zoomReset() {
+    var svg = document.querySelector("#FamilyChart svg");
+    if (svg) {
+      d3.select(svg)
+        .transition()
+        .call(
+          d3.zoom().on("zoom", function (e) {
+            svg.querySelector("g").setAttribute("transform", e.transform);
+          }).transform,
+          d3.zoomIdentity
+        );
+    }
+    updateZoomDisplay();
+  }
+
+  function zoomFit() {
+    zoomReset();
+    updateZoomDisplay();
+  }
+
   function updateZoomDisplay() {
     var d = document.getElementById("zoomLevelDisplay");
-    if (d) d.textContent = Math.round(currentZoom * 100) + "%";
+    if (d) {
+      var svg = document.querySelector("#FamilyChart svg");
+      if (svg) {
+        var t = d3.zoomTransform(svg);
+        d.textContent = Math.round(t.k * 100) + "%";
+      }
+    }
   }
 
   // Export
@@ -334,7 +317,7 @@ const TreeRenderer = (() => {
       "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
       function () {
         html2canvas(container, {
-          backgroundColor: "#FAFFF5",
+          backgroundColor: "#212121",
           scale: 2,
           useCORS: true,
           logging: false,
@@ -367,7 +350,7 @@ const TreeRenderer = (() => {
           "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
           function () {
             html2canvas(container, {
-              backgroundColor: "#FAFFF5",
+              backgroundColor: "#212121",
               scale: 2,
               useCORS: true,
               logging: false,
@@ -417,8 +400,6 @@ const TreeRenderer = (() => {
       document.body.style.overflow = "";
       if (document.fullscreenElement)
         document.exitFullscreen().catch(function () {});
-      else if (document.webkitFullscreenElement)
-        document.webkitExitFullscreen();
     } else {
       card.classList.add("tree-fullscreen");
       document.getElementById("fullscreenBtn").textContent = "✕";
