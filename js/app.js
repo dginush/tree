@@ -932,8 +932,22 @@ const App = (() => {
     var isDark = document.body.classList.contains("dark-mode");
     localStorage.setItem("darkMode", isDark ? "1" : "0");
     var btn = document.getElementById("darkModeBtn");
-    if (btn) btn.textContent = isDark ? "☀️" : "🌙";
+    if (btn) {
+      btn.textContent = isDark ? "☀️" : "🌙";
+      btn.title = isDark ? "מצב בהיר" : "מצב כהה";
+    }
   }
+
+  (function () {
+    if (localStorage.getItem("darkMode") === "1") {
+      document.body.classList.add("dark-mode");
+      var btn = document.getElementById("darkModeBtn");
+      if (btn) {
+        btn.textContent = "☀️";
+        btn.title = "מצב בהיר";
+      }
+    }
+  })();
 
   (function () {
     if (localStorage.getItem("darkMode") === "1") {

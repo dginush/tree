@@ -2272,3 +2272,22 @@ body.dark-mode #FamilyChart {
 #FamilyChart .card_cont {
   padding: 12px !important;
 }
+/* מרכוז קו החיבור מהזוג לילדים */
+#FamilyChart .card_cont .link-upper {
+  x: 50% !important;
+}
+/* הקטנת המלבן הלבן העוטף */
+#FamilyChart .card_cont {
+  padding: 4px !important;
+}
+
+#FamilyChart .card-inner {
+  padding: 2px !important;
+  margin: 0 !important;
+}
+
+#FamilyChart .card-inner.card-image-rect {
+  padding: 3px !important;
+  margin: 0 !important;
+  border-radius: 8px;
+}

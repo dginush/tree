@@ -196,7 +196,13 @@ const TreeRenderer = (() => {
         .setCardDisplay([["first name", "last name"], ["birthday"]])
         .setMiniTree(false)
         .setStyle("imageRect")
-        .setOnHoverPathToMain();
+        .setOnHoverPathToMain()
+        .setOnCardClick(function (e, d) {
+          e.stopPropagation();
+          if (d && d.data && d.data.id) {
+            App.viewMember(d.data.id);
+          }
+        });
 
       chart.updateTree({ initial: true });
 
