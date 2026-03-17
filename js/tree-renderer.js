@@ -187,7 +187,7 @@ const TreeRenderer = (() => {
         .createChart("#FamilyChart", data)
         .setTransitionTime(500)
         .setCardXSpacing(300)
-        .setCardYSpacing(150)
+        .setCardYSpacing(200)
         .setSingleParentEmptyCard(false)
         .setOrientationVertical();
 
