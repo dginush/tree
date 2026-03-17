@@ -164,6 +164,12 @@ const TreeRenderer = (() => {
         return;
       }
 
+      // הגדרת main_id בנתונים עצמם
+      data.forEach(function (d) {
+        if (d.id === rootId) d.main = true;
+        else delete d.main;
+      });
+
       chart = f3
         .createChart("#FamilyChart", data)
         .setTransitionTime(500)
@@ -179,9 +185,7 @@ const TreeRenderer = (() => {
         .setStyle("imageRect")
         .setOnHoverPathToMain();
 
-      chart.setMainId(rootId);
       chart.updateTree({ initial: true });
-
       // הוספת אירוע לחיצה על כרטיס
       setTimeout(function () {
         container.querySelectorAll(".card").forEach(function (cardEl) {
