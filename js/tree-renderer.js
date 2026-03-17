@@ -299,6 +299,80 @@ const TreeRenderer = (() => {
     document.head.appendChild(s);
   }
 
+  // ייצוא SVG וקטורי
+  function exportAsSVG() {
+    var m = document.getElementById("exportDropdownContent");
+    if (m) m.classList.remove("show");
+    App.showToast("מכין SVG...", "warning");
+
+    var container = document.getElementById("FamilyChart");
+    if (!container) {
+      App.showToast("אין עץ", "error");
+      return;
+    }
+    var svg = container.querySelector("svg");
+    if (!svg) {
+      App.showToast("אין עץ", "error");
+      return;
+    }
+    var g = svg.querySelector("g");
+    if (!g) {
+      App.showToast("אין תוכן", "error");
+      return;
+    }
+
+    var clone = svg.cloneNode(true);
+    var bbox = g.getBBox();
+    var pad = 80;
+    var isDark = document.body.classList.contains("dark-mode");
+    var bgColor = isDark ? "#1a1a2e" : "#f5f5f0";
+
+    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+    clone.setAttribute(
+      "viewBox",
+      bbox.x -
+        pad +
+        " " +
+        (bbox.y - pad) +
+        " " +
+        (bbox.width + pad * 2) +
+        " " +
+        (bbox.height + pad * 2)
+    );
+    clone.setAttribute("width", Math.max(bbox.width + pad * 2, 800));
+    clone.setAttribute("height", Math.max(bbox.height + pad * 2, 600));
+    clone.removeAttribute("style");
+
+    var cloneG = clone.querySelector("g");
+    if (cloneG) cloneG.setAttribute("transform", "");
+
+    // רקע
+    var bgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    bgRect.setAttribute("x", bbox.x - pad);
+    bgRect.setAttribute("y", bbox.y - pad);
+    bgRect.setAttribute("width", bbox.width + pad * 2);
+    bgRect.setAttribute("height", bbox.height + pad * 2);
+    bgRect.setAttribute("fill", bgColor);
+    clone.insertBefore(bgRect, clone.firstChild);
+
+    // העתקת סגנונות
+    inlineStyles(svg, clone);
+
+    // תיקון צבע קווים
+    fixExportLineColors(clone, isDark);
+
+    var svgData = new XMLSerializer().serializeToString(clone);
+    var blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    var a = document.createElement("a");
+    a.download = "family-tree.svg";
+    a.href = URL.createObjectURL(blob);
+    a.click();
+    URL.revokeObjectURL(a.href);
+    App.showToast("SVG וקטורי הורד! 📐");
+  }
+
+  // ייצוא PNG באיכות גבוהה
   function exportAsImage() {
     var m = document.getElementById("exportDropdownContent");
     if (m) m.classList.remove("show");
@@ -310,14 +384,12 @@ const TreeRenderer = (() => {
       return;
     }
 
-    // שימוש ב-html2canvas על כל ה-container
-    loadLib(
-      "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
-      function () {
-        // תיקון צבע קווים לפני ייצוא
-        fixLineColors();
+    fixLineColors();
 
-        setTimeout(function () {
+    setTimeout(function () {
+      loadLib(
+        "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+        function () {
           html2canvas(container, {
             backgroundColor: document.body.classList.contains("dark-mode")
               ? "#1a1a2e"
@@ -342,11 +414,12 @@ const TreeRenderer = (() => {
               console.error("Export error:", err);
               App.showToast("שגיאה בייצוא: " + err.message, "error");
             });
-        }, 300);
-      }
-    );
+        }
+      );
+    }, 300);
   }
 
+  // ייצוא PDF באיכות גבוהה עם וקטור
   function exportAsPDF() {
     var m = document.getElementById("exportDropdownContent");
     if (m) m.classList.remove("show");
@@ -357,61 +430,153 @@ const TreeRenderer = (() => {
       App.showToast("אין עץ", "error");
       return;
     }
+    var svg = container.querySelector("svg");
+    if (!svg) {
+      App.showToast("אין עץ", "error");
+      return;
+    }
+    var g = svg.querySelector("g");
+    if (!g) {
+      App.showToast("אין תוכן", "error");
+      return;
+    }
 
-    fixLineColors();
+    var clone = svg.cloneNode(true);
+    var bbox = g.getBBox();
+    var pad = 80;
+    var isDark = document.body.classList.contains("dark-mode");
+    var bgColor = isDark ? "#1a1a2e" : "#f5f5f0";
 
-    loadLib(
-      "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
-      function () {
-        setTimeout(function () {
-          html2canvas(container, {
-            backgroundColor: document.body.classList.contains("dark-mode")
-              ? "#1a1a2e"
-              : "#f5f5f0",
-            scale: 3,
-            useCORS: true,
-            logging: false,
-            allowTaint: true,
-            width: container.scrollWidth,
-            height: container.scrollHeight,
-            scrollX: 0,
-            scrollY: 0,
-          })
-            .then(function (canvas) {
-              loadLib(
-                "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
-                function () {
-                  var imgData = canvas.toDataURL("image/png");
-                  var o =
-                    canvas.width > canvas.height ? "landscape" : "portrait";
-                  var pdf = new jspdf.jsPDF({
-                    orientation: o,
-                    unit: "mm",
-                    format: "a3",
-                  });
-                  var pW = pdf.internal.pageSize.getWidth() - 20;
-                  var pH = pdf.internal.pageSize.getHeight() - 20;
-                  var r = Math.min(pW / canvas.width, pH / canvas.height);
-                  pdf.addImage(
-                    imgData,
-                    "PNG",
-                    10 + (pW - canvas.width * r) / 2,
-                    10 + (pH - canvas.height * r) / 2,
-                    canvas.width * r,
-                    canvas.height * r
-                  );
-                  pdf.save("family-tree.pdf");
-                  App.showToast("PDF הורד! 📄");
-                }
-              );
-            })
-            .catch(function (err) {
-              console.error("PDF error:", err);
-              App.showToast("שגיאה: " + err.message, "error");
-            });
-        }, 300);
-      }
+    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    clone.setAttribute(
+      "viewBox",
+      bbox.x -
+        pad +
+        " " +
+        (bbox.y - pad) +
+        " " +
+        (bbox.width + pad * 2) +
+        " " +
+        (bbox.height + pad * 2)
     );
+    clone.setAttribute("width", Math.max(bbox.width + pad * 2, 800));
+    clone.setAttribute("height", Math.max(bbox.height + pad * 2, 600));
+    clone.removeAttribute("style");
+
+    var cloneG = clone.querySelector("g");
+    if (cloneG) cloneG.setAttribute("transform", "");
+
+    var bgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    bgRect.setAttribute("x", bbox.x - pad);
+    bgRect.setAttribute("y", bbox.y - pad);
+    bgRect.setAttribute("width", bbox.width + pad * 2);
+    bgRect.setAttribute("height", bbox.height + pad * 2);
+    bgRect.setAttribute("fill", bgColor);
+    clone.insertBefore(bgRect, clone.firstChild);
+
+    inlineStyles(svg, clone);
+    fixExportLineColors(clone, isDark);
+
+    var svgData = new XMLSerializer().serializeToString(clone);
+    var svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    var url = URL.createObjectURL(svgBlob);
+
+    var img = new Image();
+    img.onload = function () {
+      var scale = 4;
+      var canvas = document.createElement("canvas");
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      var ctx = canvas.getContext("2d");
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.scale(scale, scale);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+
+      loadLib(
+        "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+        function () {
+          var imgData = canvas.toDataURL("image/png");
+          var o = canvas.width > canvas.height ? "landscape" : "portrait";
+          var pdf = new jspdf.jsPDF({
+            orientation: o,
+            unit: "mm",
+            format: "a3",
+          });
+          var pW = pdf.internal.pageSize.getWidth() - 20;
+          var pH = pdf.internal.pageSize.getHeight() - 20;
+          var r = Math.min(pW / canvas.width, pH / canvas.height);
+          pdf.addImage(
+            imgData,
+            "PNG",
+            10 + (pW - canvas.width * r) / 2,
+            10 + (pH - canvas.height * r) / 2,
+            canvas.width * r,
+            canvas.height * r
+          );
+          pdf.save("family-tree.pdf");
+          App.showToast("PDF הורד! 📄");
+        }
+      );
+    };
+    img.onerror = function () {
+      URL.revokeObjectURL(url);
+      App.showToast("שגיאה בייצוא PDF", "error");
+    };
+    img.src = url;
+  }
+
+  // Helper: תיקון צבע קווים ב-SVG clone לייצוא
+  function fixExportLineColors(clone, isDark) {
+    var lineColor = isDark ? "#90caf9" : "#1a3a5c";
+    clone
+      .querySelectorAll(
+        "path.link, .links_view path, path[stroke='#fff'], path[stroke='white']"
+      )
+      .forEach(function (p) {
+        p.setAttribute("stroke", lineColor);
+        p.style.stroke = lineColor;
+      });
+  }
+
+  // Helper: inline computed styles
+  function inlineStyles(source, clone) {
+    try {
+      var sourceChildren = source.querySelectorAll("*");
+      var cloneChildren = clone.querySelectorAll("*");
+      for (
+        var i = 0;
+        i < sourceChildren.length && i < cloneChildren.length;
+        i++
+      ) {
+        var computed = window.getComputedStyle(sourceChildren[i]);
+        var important = [
+          "fill",
+          "stroke",
+          "stroke-width",
+          "font-family",
+          "font-size",
+          "font-weight",
+          "text-anchor",
+          "dominant-baseline",
+          "opacity",
+          "visibility",
+          "display",
+          "color",
+          "rx",
+          "ry",
+        ];
+        important.forEach(function (prop) {
+          var val = computed.getPropertyValue(prop);
+          if (val && val !== "none" && val !== "normal" && val !== "") {
+            cloneChildren[i].style[prop] = val;
+          }
+        });
+      }
+    } catch (e) {
+      console.log("inlineStyles error:", e);
+    }
   }
 
   // Fullscreen
@@ -455,6 +620,7 @@ const TreeRenderer = (() => {
     zoomOut: zoomOut,
     zoomReset: zoomReset,
     zoomFit: zoomFit,
+    exportAsSVG: exportAsSVG,
     exportAsImage: exportAsImage,
     exportAsPDF: exportAsPDF,
     toggleExportMenu: toggleExportMenu,
