@@ -2230,3 +2230,62 @@ body.dark-mode .share-member-row {
     border: 1px solid #ddd;
   }
 }
+/* ============================================
+   Family Chart - Line Colors Fix
+   ============================================ */
+#FamilyChart path,
+#FamilyChart line,
+#FamilyChart .link,
+#FamilyChart .link path {
+  stroke: #555 !important;
+  stroke-width: 2px !important;
+}
+
+body.dark-mode #FamilyChart path,
+body.dark-mode #FamilyChart line,
+body.dark-mode #FamilyChart .link,
+body.dark-mode #FamilyChart .link path {
+  stroke: #aaa !important;
+}
+
+/* רקע בהיר במצב בהיר, כהה במצב כהה */
+#FamilyChart {
+  background-color: #f5f5f0 !important;
+}
+
+body.dark-mode #FamilyChart {
+  background-color: #1a1a2e !important;
+}
+/* ============================================
+   Tree Container - Final Fix
+   ============================================ */
+.tree-container {
+  overflow: hidden !important;
+  position: relative !important;
+  background: transparent !important;
+  border: 2px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  min-height: 500px !important;
+  height: 60vh !important;
+  cursor: grab !important;
+}
+
+.tree-container:active {
+  cursor: grabbing !important;
+}
+
+#FamilyChart {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+#FamilyChart svg {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.tree-fullscreen .tree-container {
+  height: calc(100vh - 100px) !important;
+  min-height: calc(100vh - 100px) !important;
+  border: none !important;
+}

@@ -237,25 +237,16 @@ const TreeRenderer = (() => {
   }
 
   function zoomReset() {
-    var svg = getChartSvg();
-    if (!svg) return;
-    try {
-      var zoom = d3.zoom().on("zoom", function (e) {
-        var g = svg.querySelector("g");
-        if (g) g.setAttribute("transform", e.transform);
-      });
-      d3.select(svg)
-        .transition()
-        .duration(300)
-        .call(zoom.transform, d3.zoomIdentity);
-    } catch (e) {
-      console.log("Zoom reset error:", e);
-    }
-    setTimeout(updateZoomDisplay, 350);
+    var container = document.getElementById("FamilyChart");
+    if (!container) return;
+    // render מחדש מאפס הכל
+    render();
   }
 
   function zoomFit() {
-    // fit = reset ואז render מחדש
+    var container = document.getElementById("FamilyChart");
+    if (!container) return;
+    // render מחדש = fit
     render();
   }
 
@@ -374,62 +365,26 @@ const TreeRenderer = (() => {
   }
 
   function exportAsImage() {
-    var m = document.getElementById("exportDropdownContent");
-    if (m) m.classList.remove("show");
-    App.showToast("מכין תמונה...", "warning");
+    if (cloneG) cloneG.setAttribute("transform", "");
 
-    var svgClone = getSvgForExport();
-    if (!svgClone) {
-      App.showToast("אין עץ לייצא", "error");
-      return;
-    }
+    var bgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    bgRect.setAttribute("x", bbox.x - pad);
+    bgRect.setAttribute("y", bbox.y - pad);
+    bgRect.setAttribute("width", bbox.width + pad * 2);
+    bgRect.setAttribute("height", bbox.height + pad * 2);
+    var isDark = document.body.classList.contains("dark-mode");
+    bgRect.setAttribute("fill", isDark ? "#1a1a2e" : "#f5f5f0");
+    clone.insertBefore(bgRect, clone.firstChild);
 
-    var svgData = new XMLSerializer().serializeToString(svgClone);
+    inlineStyles(svg, clone);
+
+    var svgData = new XMLSerializer().serializeToString(clone);
     var svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
     var url = URL.createObjectURL(svgBlob);
 
     var img = new Image();
     img.onload = function () {
-      var scale = 3; // high quality
-      var canvas = document.createElement("canvas");
-      canvas.width = img.width * scale;
-      canvas.height = img.height * scale;
-      var ctx = canvas.getContext("2d");
-      ctx.scale(scale, scale);
-      ctx.drawImage(img, 0, 0);
-      URL.revokeObjectURL(url);
-
-      var a = document.createElement("a");
-      a.download = "family-tree.png";
-      a.href = canvas.toDataURL("image/png");
-      a.click();
-      App.showToast("התמונה הורדה באיכות גבוהה! 🖼️");
-    };
-    img.onerror = function () {
-      URL.revokeObjectURL(url);
-      App.showToast("שגיאה בייצוא", "error");
-    };
-    img.src = url;
-  }
-
-  function exportAsPDF() {
-    var m = document.getElementById("exportDropdownContent");
-    if (m) m.classList.remove("show");
-    App.showToast("מכין PDF...", "warning");
-
-    var svgClone = getSvgForExport();
-    if (!svgClone) {
-      App.showToast("אין עץ לייצא", "error");
-      return;
-    }
-
-    var svgData = new XMLSerializer().serializeToString(svgClone);
-    var svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-    var url = URL.createObjectURL(svgBlob);
-
-    var img = new Image();
-    img.onload = function () {
-      var scale = 3;
+      var scale = 4;
       var canvas = document.createElement("canvas");
       canvas.width = img.width * scale;
       canvas.height = img.height * scale;
@@ -446,7 +401,7 @@ const TreeRenderer = (() => {
           var pdf = new jspdf.jsPDF({
             orientation: o,
             unit: "mm",
-            format: "a4",
+            format: "a3",
           });
           var pW = pdf.internal.pageSize.getWidth() - 20;
           var pH = pdf.internal.pageSize.getHeight() - 20;
@@ -466,9 +421,41 @@ const TreeRenderer = (() => {
     };
     img.onerror = function () {
       URL.revokeObjectURL(url);
-      App.showToast("שגיאה בייצוא", "error");
+      App.showToast("שגיאה", "error");
     };
     img.src = url;
+  }
+  // Helper: inline computed styles from source to clone
+  function inlineStyles(source, clone) {
+    try {
+      var sourceChildren = source.querySelectorAll("*");
+      var cloneChildren = clone.querySelectorAll("*");
+      for (
+        var i = 0;
+        i < sourceChildren.length && i < cloneChildren.length;
+        i++
+      ) {
+        var computed = window.getComputedStyle(sourceChildren[i]);
+        var important = [
+          "fill",
+          "stroke",
+          "stroke-width",
+          "font-family",
+          "font-size",
+          "font-weight",
+          "text-anchor",
+          "dominant-baseline",
+          "opacity",
+          "visibility",
+          "display",
+          "color",
+        ];
+        important.forEach(function (prop) {
+          var val = computed.getPropertyValue(prop);
+          if (val) cloneChildren[i].style[prop] = val;
+        });
+      }
+    } catch (e) {}
   }
 
   // Fullscreen
