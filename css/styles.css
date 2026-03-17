@@ -2270,5 +2270,5 @@ body.dark-mode #FamilyChart {
   min-height: calc(100vh - 120px) !important;
 }
 #FamilyChart .card_cont {
-  padding: 8px !important;
+  padding: 12px !important;
 }
