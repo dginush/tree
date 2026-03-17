@@ -446,23 +446,22 @@
                 >
                   ⊞
                 </button>
-                <div class="toolbar-divider"></div>
-                <button
-                  class="zoom-btn"
-                  onclick="TreeRenderer.toggleFullscreen()"
-                  title="מסך מלא"
-                  id="fullscreenBtn"
-                >
-                  ⛶
-                </button>
               </div>
+              <div class="toolbar-divider"></div>
+              <button
+                class="zoom-btn"
+                onclick="TreeRenderer.toggleFullscreen()"
+                title="מסך מלא"
+                id="fullscreenBtn"
+              >
+                ⛶
+              </button>
             </div>
             <div class="tree-container" id="treeContainer">
-              <div class="tree-wrapper" id="treeWrapper"></div>
+              <div id="FamilyChart" style="width: 100%; height: 100%"></div>
             </div>
           </div>
         </div>
-
         <!-- Birthdays Calendar -->
         <div id="page-birthdays" class="page">
           <div class="card">
@@ -1027,7 +1026,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
     <!-- Hebcal for accurate Hebrew dates -->
     <script src="https://cdn.jsdelivr.net/npm/@hebcal/core@5/dist/bundle.min.js"></script>
-
+    <!-- Family Chart Library -->
+    <script src="https://cdn.jsdelivr.net/npm/family-chart@0.4/dist/family-chart.min.js"></script>
     <!-- App Scripts -->
     <script src="js/firebase-config.js"></script>
     <script src="js/sharing.js"></script>
