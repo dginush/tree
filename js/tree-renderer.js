@@ -182,7 +182,7 @@ const TreeRenderer = (() => {
       card = chart
         .setCardHtml()
         .setCardDisplay([["first name", "last name"], ["birthday"]])
-        .setMiniTree(true)
+        .setMiniTree(false)
         .setStyle("imageRect")
         .setOnHoverPathToMain();
 
