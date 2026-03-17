@@ -7,7 +7,6 @@
       content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"
     />
     <title>🌳 עץ משפחתי</title>
-
     <!-- Favicon & App Icons -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -15,7 +14,12 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#2E7D32" />
     <link rel="manifest" href="/manifest.json" />
-
+    <!-- Family Chart CSS - MUST be before styles.css -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/family-chart@0.9.0/dist/styles/family-chart.css"
+    />
+    <!-- App CSS - overrides family-chart where needed -->
     <link rel="stylesheet" href="css/styles.css" />
     <link
       href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap"
@@ -1033,10 +1037,6 @@
     <!-- Family Chart Library -->
     <script src="https://unpkg.com/d3@7"></script>
     <script type="module" src="https://unpkg.com/family-chart@0.9.0"></script>
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/family-chart@0.9.0/dist/styles/family-chart.css"
-    />
     <!-- App Scripts -->
     <script src="js/firebase-config.js"></script>
     <script src="js/sharing.js"></script>
