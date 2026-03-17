@@ -2279,3 +2279,18 @@ body.dark-mode .f3 .link path {
 .tree-fullscreen #FamilyChart {
   min-height: calc(100vh - 120px) !important;
 }
+/* ============================================
+   Family Chart - Connector Line Colors
+   ============================================ */
+#FamilyChart path.link,
+#FamilyChart .links_view path,
+#FamilyChart .links_view .link {
+  stroke: #1a3a5c !important;
+  stroke-width: 2px !important;
+}
+
+body.dark-mode #FamilyChart path.link,
+body.dark-mode #FamilyChart .links_view path,
+body.dark-mode #FamilyChart .links_view .link {
+  stroke: #90caf9 !important;
+}

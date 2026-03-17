@@ -430,10 +430,14 @@ const TreeRenderer = (() => {
     inlineStyles(svg, clone);
 
     // תיקון צבע קווים בייצוא
-    clone.querySelectorAll(".link path, path.link").forEach(function (p) {
-      p.setAttribute("stroke", isDark ? "#90caf9" : "#1a3a5c");
-      p.style.stroke = isDark ? "#90caf9" : "#1a3a5c";
-    });
+    var isDark = document.body.classList.contains("dark-mode");
+    var linkColor = isDark ? "#90caf9" : "#1a3a5c";
+    clone
+      .querySelectorAll("path.link, .links_view path, .link")
+      .forEach(function (p) {
+        p.setAttribute("stroke", linkColor);
+        p.style.stroke = linkColor;
+      });
 
     var svgData = new XMLSerializer().serializeToString(clone);
     var svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
@@ -519,11 +523,15 @@ const TreeRenderer = (() => {
     clone.insertBefore(bgRect, clone.firstChild);
 
     inlineStyles(svg, clone);
-
-    clone.querySelectorAll(".link path, path.link").forEach(function (p) {
-      p.setAttribute("stroke", isDark ? "#90caf9" : "#1a3a5c");
-      p.style.stroke = isDark ? "#90caf9" : "#1a3a5c";
-    });
+    // תיקון צבע קווים בייצוא
+    var isDark = document.body.classList.contains("dark-mode");
+    var linkColor = isDark ? "#90caf9" : "#1a3a5c";
+    clone
+      .querySelectorAll("path.link, .links_view path, .link")
+      .forEach(function (p) {
+        p.setAttribute("stroke", linkColor);
+        p.style.stroke = linkColor;
+      });
 
     var svgData = new XMLSerializer().serializeToString(clone);
     var svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
