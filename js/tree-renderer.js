@@ -39,7 +39,6 @@ const TreeRenderer = (() => {
     var sdc = document.getElementById("showDeceased")?.checked ?? true;
     var rootId = document.getElementById("treeRoot")?.value;
     if (!ms.length || !rootId) return [];
-
     var visited = {};
     var data = [];
 
@@ -125,7 +124,6 @@ const TreeRenderer = (() => {
       }
 
       data.push(person);
-
       if (m.spouseId && !visited[m.spouseId]) addPerson(m.spouseId, depth);
       children.forEach(function (c) {
         if (!visited[c.id]) addPerson(c.id, depth + 1);
@@ -139,14 +137,29 @@ const TreeRenderer = (() => {
     return data;
   }
 
-  function render() {
+  // שינוי צבע קווים ישירות על ה-SVG elements
+  function fixLineColors() {
+    var isDark = document.body.classList.contains("dark-mode");
+    var lineColor = isDark ? "#90caf9" : "#1a3a5c";
     var container = document.getElementById("FamilyChart");
     if (!container) return;
 
+    // מצא את כל הקווים ושנה את ה-stroke ישירות
+    container
+      .querySelectorAll("path.link, .links_view path")
+      .forEach(function (p) {
+        p.setAttribute("stroke", lineColor);
+        p.setAttribute("stroke-width", "2");
+      });
+  }
+
+  function render() {
+    var container = document.getElementById("FamilyChart");
+    if (!container) return;
     var data = buildData();
     if (!data.length) {
       container.innerHTML =
-        '<div class="empty-state" style="color:#fff"><div class="icon">🌴</div><h3>בחרו שורש לעץ</h3></div>';
+        '<div class="empty-state"><div class="icon">🌴</div><h3>בחרו שורש לעץ</h3></div>';
       chart = null;
       return;
     }
@@ -161,11 +174,10 @@ const TreeRenderer = (() => {
     try {
       if (typeof f3 === "undefined") {
         container.innerHTML =
-          '<div class="empty-state" style="color:#fff"><div class="icon">⏳</div><h3>טוען ספרייה...</h3><p>רענן את הדף</p></div>';
+          '<div class="empty-state"><div class="icon">⏳</div><h3>טוען ספרייה...</h3><p>רענן את הדף</p></div>';
         return;
       }
 
-      // סימון main
       data.forEach(function (d) {
         if (d.id === rootId) d.main = true;
         else delete d.main;
@@ -186,18 +198,19 @@ const TreeRenderer = (() => {
         .setStyle("imageRect")
         .setOnHoverPathToMain();
 
-      // בעיה 3: לחיצה על כרטיס = פתיחת פרטים
-      card.setOnCardClick(function (e, d) {
-        if (d && d.data && d.data.id) {
-          App.viewMember(d.data.id);
-        }
-      });
-
       chart.updateTree({ initial: true });
+
+      // תיקון צבע קווים אחרי ציור
+      setTimeout(fixLineColors, 600);
+
+      // מאזין ל-hover שמשנה קווים - מתקן צבע אחרי כל שינוי
+      var observer = new MutationObserver(function () {
+        // לא משנים צבע ב-mutation כדי לאפשר highlight לעבוד
+      });
     } catch (err) {
       console.error("Family chart error:", err);
       container.innerHTML =
-        '<div class="empty-state" style="color:#fff"><div class="icon">⚠️</div><h3>שגיאה בטעינת העץ</h3><p>' +
+        '<div class="empty-state"><div class="icon">⚠️</div><h3>שגיאה</h3><p>' +
         err.message +
         "</p></div>";
     }
@@ -205,18 +218,9 @@ const TreeRenderer = (() => {
     updateZoomDisplay();
   }
 
-  // בעיה 4: זום עובד
-  function getChartSvg() {
-    return document.querySelector("#FamilyChart svg");
-  }
-
-  function getChartG() {
-    var svg = getChartSvg();
-    return svg ? svg.querySelector("g") : null;
-  }
-
+  // Zoom
   function zoomIn() {
-    var svg = getChartSvg();
+    var svg = document.querySelector("#FamilyChart svg");
     if (!svg) return;
     try {
       var zoom = d3.zoom().on("zoom", function (e) {
@@ -224,14 +228,12 @@ const TreeRenderer = (() => {
         if (g) g.setAttribute("transform", e.transform);
       });
       d3.select(svg).transition().duration(300).call(zoom.scaleBy, 1.3);
-    } catch (e) {
-      console.log("Zoom error:", e);
-    }
+    } catch (e) {}
     setTimeout(updateZoomDisplay, 350);
   }
 
   function zoomOut() {
-    var svg = getChartSvg();
+    var svg = document.querySelector("#FamilyChart svg");
     if (!svg) return;
     try {
       var zoom = d3.zoom().on("zoom", function (e) {
@@ -239,30 +241,21 @@ const TreeRenderer = (() => {
         if (g) g.setAttribute("transform", e.transform);
       });
       d3.select(svg).transition().duration(300).call(zoom.scaleBy, 0.7);
-    } catch (e) {
-      console.log("Zoom error:", e);
-    }
+    } catch (e) {}
     setTimeout(updateZoomDisplay, 350);
   }
 
   function zoomReset() {
-    var container = document.getElementById("FamilyChart");
-    if (!container) return;
-    // render מחדש מאפס הכל
     render();
   }
-
   function zoomFit() {
-    var container = document.getElementById("FamilyChart");
-    if (!container) return;
-    // render מחדש = fit
     render();
   }
 
   function updateZoomDisplay() {
     var d = document.getElementById("zoomLevelDisplay");
     if (!d) return;
-    var svg = getChartSvg();
+    var svg = document.querySelector("#FamilyChart svg");
     if (svg) {
       try {
         var t = d3.zoomTransform(svg);
@@ -273,7 +266,7 @@ const TreeRenderer = (() => {
     }
   }
 
-  // בעיה 5: ייצוא SVG איכותי
+  // Export
   function toggleExportMenu() {
     var m = document.getElementById("exportDropdownContent");
     if (m) {
@@ -306,312 +299,119 @@ const TreeRenderer = (() => {
     document.head.appendChild(s);
   }
 
-  function getSvgForExport() {
-    var svg = getChartSvg();
-    if (!svg) return null;
-
-    // Clone SVG
-    var clone = svg.cloneNode(true);
-
-    // Get bounding box of content
-    var g = svg.querySelector("g");
-    if (!g) return null;
-
-    var bbox = g.getBBox();
-    var padding = 50;
-
-    // Set viewBox to fit content
-    clone.setAttribute(
-      "viewBox",
-      bbox.x -
-        padding +
-        " " +
-        (bbox.y - padding) +
-        " " +
-        (bbox.width + padding * 2) +
-        " " +
-        (bbox.height + padding * 2)
-    );
-    clone.setAttribute("width", bbox.width + padding * 2);
-    clone.setAttribute("height", bbox.height + padding * 2);
-
-    // Reset transform on g element
-    var cloneG = clone.querySelector("g");
-    if (cloneG) cloneG.setAttribute("transform", "");
-
-    // Add background
-    var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    rect.setAttribute("x", bbox.x - padding);
-    rect.setAttribute("y", bbox.y - padding);
-    rect.setAttribute("width", bbox.width + padding * 2);
-    rect.setAttribute("height", bbox.height + padding * 2);
-    rect.setAttribute("fill", "#1a1a2e");
-    clone.insertBefore(rect, clone.firstChild);
-
-    // Add styles
-    var styleEl = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "style"
-    );
-    var cssRules = "";
-    try {
-      var sheets = document.styleSheets;
-      for (var i = 0; i < sheets.length; i++) {
-        try {
-          var rules = sheets[i].cssRules || sheets[i].rules;
-          if (rules) {
-            for (var j = 0; j < rules.length; j++) {
-              cssRules += rules[j].cssText + "\n";
-            }
-          }
-        } catch (e) {} // cross-origin sheets
-      }
-    } catch (e) {}
-    styleEl.textContent = cssRules;
-    clone.insertBefore(styleEl, clone.firstChild);
-
-    return clone;
-  }
-
   function exportAsImage() {
     var m = document.getElementById("exportDropdownContent");
     if (m) m.classList.remove("show");
     App.showToast("מכין תמונה...", "warning");
+
     var container = document.getElementById("FamilyChart");
     if (!container) {
       App.showToast("אין עץ", "error");
       return;
     }
-    var svg = container.querySelector("svg");
-    if (!svg) {
-      App.showToast("אין עץ", "error");
-      return;
-    }
-    var g = svg.querySelector("g");
-    if (!g) {
-      App.showToast("אין תוכן", "error");
-      return;
-    }
 
-    var clone = svg.cloneNode(true);
-    var bbox = g.getBBox();
-    var pad = 80;
-    var isDark = document.body.classList.contains("dark-mode");
-    var bgColor = isDark ? "#1a1a2e" : "#f5f5f0";
+    // שימוש ב-html2canvas על כל ה-container
+    loadLib(
+      "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+      function () {
+        // תיקון צבע קווים לפני ייצוא
+        fixLineColors();
 
-    clone.setAttribute(
-      "viewBox",
-      bbox.x -
-        pad +
-        " " +
-        (bbox.y - pad) +
-        " " +
-        (bbox.width + pad * 2) +
-        " " +
-        (bbox.height + pad * 2)
+        setTimeout(function () {
+          html2canvas(container, {
+            backgroundColor: document.body.classList.contains("dark-mode")
+              ? "#1a1a2e"
+              : "#f5f5f0",
+            scale: 3,
+            useCORS: true,
+            logging: false,
+            allowTaint: true,
+            width: container.scrollWidth,
+            height: container.scrollHeight,
+            scrollX: 0,
+            scrollY: 0,
+          })
+            .then(function (canvas) {
+              var a = document.createElement("a");
+              a.download = "family-tree.png";
+              a.href = canvas.toDataURL("image/png");
+              a.click();
+              App.showToast("הורד! 🖼️");
+            })
+            .catch(function (err) {
+              console.error("Export error:", err);
+              App.showToast("שגיאה בייצוא: " + err.message, "error");
+            });
+        }, 300);
+      }
     );
-    clone.setAttribute("width", Math.max(bbox.width + pad * 2, 800));
-    clone.setAttribute("height", Math.max(bbox.height + pad * 2, 600));
-    clone.removeAttribute("style");
-
-    var cloneG = clone.querySelector("g");
-    if (cloneG) cloneG.setAttribute("transform", "");
-
-    // רקע
-    var bgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    bgRect.setAttribute("x", bbox.x - pad);
-    bgRect.setAttribute("y", bbox.y - pad);
-    bgRect.setAttribute("width", bbox.width + pad * 2);
-    bgRect.setAttribute("height", bbox.height + pad * 2);
-    bgRect.setAttribute("fill", bgColor);
-    clone.insertBefore(bgRect, clone.firstChild);
-
-    // העתקת סגנונות מחושבים
-    inlineStyles(svg, clone);
-
-    // תיקון צבע קווים בייצוא
-    var isDark = document.body.classList.contains("dark-mode");
-    var linkColor = isDark ? "#90caf9" : "#1a3a5c";
-    clone
-      .querySelectorAll("path.link, .links_view path, .link")
-      .forEach(function (p) {
-        p.setAttribute("stroke", linkColor);
-        p.style.stroke = linkColor;
-      });
-
-    var svgData = new XMLSerializer().serializeToString(clone);
-    var svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-    var url = URL.createObjectURL(svgBlob);
-
-    var img = new Image();
-    img.onload = function () {
-      var scale = 4;
-      var canvas = document.createElement("canvas");
-      canvas.width = img.width * scale;
-      canvas.height = img.height * scale;
-      var ctx = canvas.getContext("2d");
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.scale(scale, scale);
-      ctx.drawImage(img, 0, 0);
-      URL.revokeObjectURL(url);
-      var a = document.createElement("a");
-      a.download = "family-tree.png";
-      a.href = canvas.toDataURL("image/png");
-      a.click();
-      App.showToast("הורד באיכות גבוהה! 🖼️");
-    };
-    img.onerror = function () {
-      URL.revokeObjectURL(url);
-      // fallback: הורד כ-SVG
-      var a = document.createElement("a");
-      a.download = "family-tree.svg";
-      a.href = URL.createObjectURL(svgBlob);
-      a.click();
-      App.showToast("הורד כ-SVG! 📐");
-    };
-    img.src = url;
   }
 
   function exportAsPDF() {
     var m = document.getElementById("exportDropdownContent");
     if (m) m.classList.remove("show");
     App.showToast("מכין PDF...", "warning");
+
     var container = document.getElementById("FamilyChart");
     if (!container) {
       App.showToast("אין עץ", "error");
       return;
     }
-    var svg = container.querySelector("svg");
-    if (!svg) {
-      App.showToast("אין עץ", "error");
-      return;
-    }
-    var g = svg.querySelector("g");
-    if (!g) return;
 
-    var clone = svg.cloneNode(true);
-    var bbox = g.getBBox();
-    var pad = 80;
-    var isDark = document.body.classList.contains("dark-mode");
-    var bgColor = isDark ? "#1a1a2e" : "#f5f5f0";
+    fixLineColors();
 
-    clone.setAttribute(
-      "viewBox",
-      bbox.x -
-        pad +
-        " " +
-        (bbox.y - pad) +
-        " " +
-        (bbox.width + pad * 2) +
-        " " +
-        (bbox.height + pad * 2)
-    );
-    clone.setAttribute("width", Math.max(bbox.width + pad * 2, 800));
-    clone.setAttribute("height", Math.max(bbox.height + pad * 2, 600));
-    clone.removeAttribute("style");
-
-    var cloneG = clone.querySelector("g");
-    if (cloneG) cloneG.setAttribute("transform", "");
-
-    var bgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    bgRect.setAttribute("x", bbox.x - pad);
-    bgRect.setAttribute("y", bbox.y - pad);
-    bgRect.setAttribute("width", bbox.width + pad * 2);
-    bgRect.setAttribute("height", bbox.height + pad * 2);
-    bgRect.setAttribute("fill", bgColor);
-    clone.insertBefore(bgRect, clone.firstChild);
-
-    inlineStyles(svg, clone);
-    // תיקון צבע קווים בייצוא
-    var isDark = document.body.classList.contains("dark-mode");
-    var linkColor = isDark ? "#90caf9" : "#1a3a5c";
-    clone
-      .querySelectorAll("path.link, .links_view path, .link")
-      .forEach(function (p) {
-        p.setAttribute("stroke", linkColor);
-        p.style.stroke = linkColor;
-      });
-
-    var svgData = new XMLSerializer().serializeToString(clone);
-    var svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-    var url = URL.createObjectURL(svgBlob);
-
-    var img = new Image();
-    img.onload = function () {
-      var scale = 4;
-      var canvas = document.createElement("canvas");
-      canvas.width = img.width * scale;
-      canvas.height = img.height * scale;
-      var ctx = canvas.getContext("2d");
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.scale(scale, scale);
-      ctx.drawImage(img, 0, 0);
-      URL.revokeObjectURL(url);
-      loadLib(
-        "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
-        function () {
-          var imgData = canvas.toDataURL("image/png");
-          var o = canvas.width > canvas.height ? "landscape" : "portrait";
-          var pdf = new jspdf.jsPDF({
-            orientation: o,
-            unit: "mm",
-            format: "a3",
-          });
-          var pW = pdf.internal.pageSize.getWidth() - 20;
-          var pH = pdf.internal.pageSize.getHeight() - 20;
-          var r = Math.min(pW / canvas.width, pH / canvas.height);
-          pdf.addImage(
-            imgData,
-            "PNG",
-            10 + (pW - canvas.width * r) / 2,
-            10 + (pH - canvas.height * r) / 2,
-            canvas.width * r,
-            canvas.height * r
-          );
-          pdf.save("family-tree.pdf");
-          App.showToast("PDF הורד! 📄");
-        }
-      );
-    };
-    img.onerror = function () {
-      URL.revokeObjectURL(url);
-      App.showToast("שגיאה", "error");
-    };
-    img.src = url;
-  }
-  // Helper: inline computed styles from source to clone
-  function inlineStyles(source, clone) {
-    try {
-      var sourceChildren = source.querySelectorAll("*");
-      var cloneChildren = clone.querySelectorAll("*");
-      for (
-        var i = 0;
-        i < sourceChildren.length && i < cloneChildren.length;
-        i++
-      ) {
-        var computed = window.getComputedStyle(sourceChildren[i]);
-        var important = [
-          "fill",
-          "stroke",
-          "stroke-width",
-          "font-family",
-          "font-size",
-          "font-weight",
-          "text-anchor",
-          "dominant-baseline",
-          "opacity",
-          "visibility",
-          "display",
-          "color",
-        ];
-        important.forEach(function (prop) {
-          var val = computed.getPropertyValue(prop);
-          if (val) cloneChildren[i].style[prop] = val;
-        });
+    loadLib(
+      "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+      function () {
+        setTimeout(function () {
+          html2canvas(container, {
+            backgroundColor: document.body.classList.contains("dark-mode")
+              ? "#1a1a2e"
+              : "#f5f5f0",
+            scale: 3,
+            useCORS: true,
+            logging: false,
+            allowTaint: true,
+            width: container.scrollWidth,
+            height: container.scrollHeight,
+            scrollX: 0,
+            scrollY: 0,
+          })
+            .then(function (canvas) {
+              loadLib(
+                "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+                function () {
+                  var imgData = canvas.toDataURL("image/png");
+                  var o =
+                    canvas.width > canvas.height ? "landscape" : "portrait";
+                  var pdf = new jspdf.jsPDF({
+                    orientation: o,
+                    unit: "mm",
+                    format: "a3",
+                  });
+                  var pW = pdf.internal.pageSize.getWidth() - 20;
+                  var pH = pdf.internal.pageSize.getHeight() - 20;
+                  var r = Math.min(pW / canvas.width, pH / canvas.height);
+                  pdf.addImage(
+                    imgData,
+                    "PNG",
+                    10 + (pW - canvas.width * r) / 2,
+                    10 + (pH - canvas.height * r) / 2,
+                    canvas.width * r,
+                    canvas.height * r
+                  );
+                  pdf.save("family-tree.pdf");
+                  App.showToast("PDF הורד! 📄");
+                }
+              );
+            })
+            .catch(function (err) {
+              console.error("PDF error:", err);
+              App.showToast("שגיאה: " + err.message, "error");
+            });
+        }, 300);
       }
-    } catch (e) {}
+    );
   }
 
   // Fullscreen
