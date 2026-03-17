@@ -64,7 +64,6 @@ const TreeRenderer = (() => {
         rels: {},
       };
 
-      // הורים
       if (m.parentId) {
         var p1 = ms.find(function (x) {
           return x.id === m.parentId;
@@ -84,7 +83,6 @@ const TreeRenderer = (() => {
         }
       }
 
-      // בן/בת זוג
       if (m.spouseId) {
         var spouse = ms.find(function (x) {
           return x.id === m.spouseId;
@@ -94,13 +92,11 @@ const TreeRenderer = (() => {
         }
       }
 
-      // ילדים
       var children = ms.filter(function (c) {
         if (c.status === "deceased" && !sdc) return false;
         return c.parentId === m.id || c.parentId2 === m.id;
       });
       if (children.length > 0) {
-        // מיון לפי גיל
         children.sort(function (a, b) {
           var da = a.birthDate ? a.birthDate.split("/") : null;
           var db = b.birthDate ? b.birthDate.split("/") : null;
@@ -121,13 +117,10 @@ const TreeRenderer = (() => {
 
       data.push(person);
 
-      // הוסף בן/בת זוג
       if (m.spouseId && !visited[m.spouseId]) addPerson(m.spouseId, depth);
-      // הוסף ילדים
       children.forEach(function (c) {
         if (!visited[c.id]) addPerson(c.id, depth + 1);
       });
-      // הוסף הורים
       if (m.parentId && !visited[m.parentId]) addPerson(m.parentId, depth - 1);
       if (m.parentId2 && !visited[m.parentId2])
         addPerson(m.parentId2, depth - 1);
@@ -144,7 +137,7 @@ const TreeRenderer = (() => {
     var data = buildData();
     if (!data.length) {
       container.innerHTML =
-        '<div class="empty-state"><div class="icon">🌴</div><h3>בחרו שורש לעץ</h3></div>';
+        '<div class="empty-state" style="color:#fff"><div class="icon">🌴</div><h3>בחרו שורש לעץ</h3></div>';
       chart = null;
       return;
     }
@@ -157,14 +150,13 @@ const TreeRenderer = (() => {
     container.style.minHeight = "500px";
 
     try {
-      // בדיקה שf3 זמין
       if (typeof f3 === "undefined") {
         container.innerHTML =
-          '<div class="empty-state"><div class="icon">⏳</div><h3>טוען ספרייה...</h3><p>רענן את הדף</p></div>';
+          '<div class="empty-state" style="color:#fff"><div class="icon">⏳</div><h3>טוען ספרייה...</h3><p>רענן את הדף</p></div>';
         return;
       }
 
-      // הגדרת main_id בנתונים עצמם
+      // סימון main
       data.forEach(function (d) {
         if (d.id === rootId) d.main = true;
         else delete d.main;
@@ -185,100 +177,103 @@ const TreeRenderer = (() => {
         .setStyle("imageRect")
         .setOnHoverPathToMain();
 
+      // בעיה 3: לחיצה על כרטיס = פתיחת פרטים
+      card.setOnCardClick(function (e, d) {
+        if (d && d.data && d.data.id) {
+          App.viewMember(d.data.id);
+        }
+      });
+
       chart.updateTree({ initial: true });
-      // הוספת אירוע לחיצה על כרטיס
-      setTimeout(function () {
-        container.querySelectorAll(".card").forEach(function (cardEl) {
-          cardEl.style.cursor = "pointer";
-          cardEl.addEventListener("click", function (e) {
-            var datum = d3.select(this).datum();
-            if (datum && datum.data && datum.data.id) {
-              App.viewMember(datum.data.id);
-            }
-          });
-        });
-      }, 800);
     } catch (err) {
       console.error("Family chart error:", err);
       container.innerHTML =
-        '<div class="empty-state"><div class="icon">⚠️</div><h3>שגיאה בטעינת העץ</h3><p>' +
+        '<div class="empty-state" style="color:#fff"><div class="icon">⚠️</div><h3>שגיאה בטעינת העץ</h3><p>' +
         err.message +
         "</p></div>";
     }
+
+    updateZoomDisplay();
   }
 
-  // Zoom
+  // בעיה 4: זום עובד
+  function getChartSvg() {
+    return document.querySelector("#FamilyChart svg");
+  }
+
+  function getChartG() {
+    var svg = getChartSvg();
+    return svg ? svg.querySelector("g") : null;
+  }
+
   function zoomIn() {
-    if (chart && chart.getChart) {
-      var svg = document.querySelector("#FamilyChart svg");
-      if (svg) {
+    var svg = getChartSvg();
+    if (!svg) return;
+    try {
+      var zoom = d3.zoom().on("zoom", function (e) {
         var g = svg.querySelector("g");
-        if (g) {
-          var t = d3.zoomTransform(svg);
-          d3.select(svg)
-            .transition()
-            .call(
-              d3.zoom().on("zoom", function (e) {
-                g.setAttribute("transform", e.transform);
-              }).scaleBy,
-              1.3
-            );
-        }
-      }
+        if (g) g.setAttribute("transform", e.transform);
+      });
+      d3.select(svg).transition().duration(300).call(zoom.scaleBy, 1.3);
+    } catch (e) {
+      console.log("Zoom error:", e);
     }
-    updateZoomDisplay();
+    setTimeout(updateZoomDisplay, 350);
   }
 
   function zoomOut() {
-    var svg = document.querySelector("#FamilyChart svg");
-    if (svg) {
-      var g = svg.querySelector("g");
-      if (g) {
-        d3.select(svg)
-          .transition()
-          .call(
-            d3.zoom().on("zoom", function (e) {
-              g.setAttribute("transform", e.transform);
-            }).scaleBy,
-            0.7
-          );
-      }
+    var svg = getChartSvg();
+    if (!svg) return;
+    try {
+      var zoom = d3.zoom().on("zoom", function (e) {
+        var g = svg.querySelector("g");
+        if (g) g.setAttribute("transform", e.transform);
+      });
+      d3.select(svg).transition().duration(300).call(zoom.scaleBy, 0.7);
+    } catch (e) {
+      console.log("Zoom error:", e);
     }
-    updateZoomDisplay();
+    setTimeout(updateZoomDisplay, 350);
   }
 
   function zoomReset() {
-    var svg = document.querySelector("#FamilyChart svg");
-    if (svg) {
+    var svg = getChartSvg();
+    if (!svg) return;
+    try {
+      var zoom = d3.zoom().on("zoom", function (e) {
+        var g = svg.querySelector("g");
+        if (g) g.setAttribute("transform", e.transform);
+      });
       d3.select(svg)
         .transition()
-        .call(
-          d3.zoom().on("zoom", function (e) {
-            svg.querySelector("g").setAttribute("transform", e.transform);
-          }).transform,
-          d3.zoomIdentity
-        );
+        .duration(300)
+        .call(zoom.transform, d3.zoomIdentity);
+    } catch (e) {
+      console.log("Zoom reset error:", e);
     }
-    updateZoomDisplay();
+    setTimeout(updateZoomDisplay, 350);
   }
 
   function zoomFit() {
-    zoomReset();
-    updateZoomDisplay();
+    // fit = reset ואז render מחדש
+    render();
   }
 
   function updateZoomDisplay() {
     var d = document.getElementById("zoomLevelDisplay");
-    if (d) {
-      var svg = document.querySelector("#FamilyChart svg");
-      if (svg) {
+    if (!d) return;
+    var svg = getChartSvg();
+    if (svg) {
+      try {
         var t = d3.zoomTransform(svg);
         d.textContent = Math.round(t.k * 100) + "%";
+      } catch (e) {
+        d.textContent = "100%";
       }
     }
   }
 
-  // Export
+  // בעיה 5: ייצוא SVG איכותי
   function toggleExportMenu() {
     var m = document.getElementById("exportDropdownContent");
     if (m) {
@@ -311,111 +306,197 @@ const TreeRenderer = (() => {
     document.head.appendChild(s);
   }
 
+  function getSvgForExport() {
+    var svg = getChartSvg();
+    if (!svg) return null;
+
+    // Clone SVG
+    var clone = svg.cloneNode(true);
+
+    // Get bounding box of content
+    var g = svg.querySelector("g");
+    if (!g) return null;
+
+    var bbox = g.getBBox();
+    var padding = 50;
+
+    // Set viewBox to fit content
+    clone.setAttribute(
+      "viewBox",
+      bbox.x -
+        padding +
+        " " +
+        (bbox.y - padding) +
+        " " +
+        (bbox.width + padding * 2) +
+        " " +
+        (bbox.height + padding * 2)
+    );
+    clone.setAttribute("width", bbox.width + padding * 2);
+    clone.setAttribute("height", bbox.height + padding * 2);
+
+    // Reset transform on g element
+    var cloneG = clone.querySelector("g");
+    if (cloneG) cloneG.setAttribute("transform", "");
+
+    // Add background
+    var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("x", bbox.x - padding);
+    rect.setAttribute("y", bbox.y - padding);
+    rect.setAttribute("width", bbox.width + padding * 2);
+    rect.setAttribute("height", bbox.height + padding * 2);
+    rect.setAttribute("fill", "#1a1a2e");
+    clone.insertBefore(rect, clone.firstChild);
+
+    // Add styles
+    var styleEl = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "style"
+    );
+    var cssRules = "";
+    try {
+      var sheets = document.styleSheets;
+      for (var i = 0; i < sheets.length; i++) {
+        try {
+          var rules = sheets[i].cssRules || sheets[i].rules;
+          if (rules) {
+            for (var j = 0; j < rules.length; j++) {
+              cssRules += rules[j].cssText + "\n";
+            }
+          }
+        } catch (e) {} // cross-origin sheets
+      }
+    } catch (e) {}
+    styleEl.textContent = cssRules;
+    clone.insertBefore(styleEl, clone.firstChild);
+
+    return clone;
+  }
+
   function exportAsImage() {
     var m = document.getElementById("exportDropdownContent");
     if (m) m.classList.remove("show");
-    var container = document.getElementById("FamilyChart");
-    if (!container) return;
     App.showToast("מכין תמונה...", "warning");
-    loadLib(
-      "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
-      function () {
-        html2canvas(container, {
-          backgroundColor: "#212121",
-          scale: 2,
-          useCORS: true,
-          logging: false,
-        })
-          .then(function (canvas) {
-            var a = document.createElement("a");
-            a.download = "family-tree.png";
-            a.href = canvas.toDataURL("image/png");
-            a.click();
-            App.showToast("התמונה הורדה! 🖼️");
-          })
-          .catch(function (err) {
-            console.error(err);
-            App.showToast("שגיאה", "error");
-          });
-      }
-    );
+
+    var svgClone = getSvgForExport();
+    if (!svgClone) {
+      App.showToast("אין עץ לייצא", "error");
+      return;
+    }
+
+    var svgData = new XMLSerializer().serializeToString(svgClone);
+    var svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    var url = URL.createObjectURL(svgBlob);
+
+    var img = new Image();
+    img.onload = function () {
+      var scale = 3; // high quality
+      var canvas = document.createElement("canvas");
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      var ctx = canvas.getContext("2d");
+      ctx.scale(scale, scale);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+
+      var a = document.createElement("a");
+      a.download = "family-tree.png";
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+      App.showToast("התמונה הורדה באיכות גבוהה! 🖼️");
+    };
+    img.onerror = function () {
+      URL.revokeObjectURL(url);
+      App.showToast("שגיאה בייצוא", "error");
+    };
+    img.src = url;
   }
 
   function exportAsPDF() {
     var m = document.getElementById("exportDropdownContent");
     if (m) m.classList.remove("show");
-    var container = document.getElementById("FamilyChart");
-    if (!container) return;
     App.showToast("מכין PDF...", "warning");
-    loadLib(
-      "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
-      function () {
-        loadLib(
-          "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
-          function () {
-            html2canvas(container, {
-              backgroundColor: "#212121",
-              scale: 2,
-              useCORS: true,
-              logging: false,
-            })
-              .then(function (canvas) {
-                var img = canvas.toDataURL("image/png");
-                var o = canvas.width > canvas.height ? "landscape" : "portrait";
-                var pdf = new jspdf.jsPDF({
-                  orientation: o,
-                  unit: "mm",
-                  format: "a4",
-                });
-                var pW = pdf.internal.pageSize.getWidth() - 20,
-                  pH = pdf.internal.pageSize.getHeight() - 20;
-                var r = Math.min(pW / canvas.width, pH / canvas.height);
-                pdf.addImage(
-                  img,
-                  "PNG",
-                  10 + (pW - canvas.width * r) / 2,
-                  10 + (pH - canvas.height * r) / 2,
-                  canvas.width * r,
-                  canvas.height * r
-                );
-                pdf.save("family-tree.pdf");
-                App.showToast("PDF הורד! 📄");
-              })
-              .catch(function (err) {
-                console.error(err);
-                App.showToast("שגיאה", "error");
-              });
-          }
-        );
-      }
-    );
+
+    var svgClone = getSvgForExport();
+    if (!svgClone) {
+      App.showToast("אין עץ לייצא", "error");
+      return;
+    }
+
+    var svgData = new XMLSerializer().serializeToString(svgClone);
+    var svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    var url = URL.createObjectURL(svgBlob);
+
+    var img = new Image();
+    img.onload = function () {
+      var scale = 3;
+      var canvas = document.createElement("canvas");
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      var ctx = canvas.getContext("2d");
+      ctx.scale(scale, scale);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+
+      loadLib(
+        "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+        function () {
+          var imgData = canvas.toDataURL("image/png");
+          var o = canvas.width > canvas.height ? "landscape" : "portrait";
+          var pdf = new jspdf.jsPDF({
+            orientation: o,
+            unit: "mm",
+            format: "a4",
+          });
+          var pW = pdf.internal.pageSize.getWidth() - 20;
+          var pH = pdf.internal.pageSize.getHeight() - 20;
+          var r = Math.min(pW / canvas.width, pH / canvas.height);
+          pdf.addImage(
+            imgData,
+            "PNG",
+            10 + (pW - canvas.width * r) / 2,
+            10 + (pH - canvas.height * r) / 2,
+            canvas.width * r,
+            canvas.height * r
+          );
+          pdf.save("family-tree.pdf");
+          App.showToast("PDF הורד! 📄");
+        }
+      );
+    };
+    img.onerror = function () {
+      URL.revokeObjectURL(url);
+      App.showToast("שגיאה בייצוא", "error");
+    };
+    img.src = url;
   }
 
   // Fullscreen
   function toggleFullscreen() {
-    var card = document.querySelector(".tree-page-card");
-    if (!card) return;
-    var isFS = card.classList.contains("tree-fullscreen");
+    var cardEl = document.querySelector(".tree-page-card");
+    if (!cardEl) return;
+    var isFS = cardEl.classList.contains("tree-fullscreen");
     if (isFS) {
-      card.classList.remove("tree-fullscreen");
-      var btn = card.querySelector(".fullscreen-close-btn");
+      cardEl.classList.remove("tree-fullscreen");
+      var btn = cardEl.querySelector(".fullscreen-close-btn");
       if (btn) btn.remove();
       document.getElementById("fullscreenBtn").textContent = "⛶";
       document.body.style.overflow = "";
       if (document.fullscreenElement)
         document.exitFullscreen().catch(function () {});
     } else {
-      card.classList.add("tree-fullscreen");
+      cardEl.classList.add("tree-fullscreen");
       document.getElementById("fullscreenBtn").textContent = "✕";
       document.body.style.overflow = "hidden";
       var closeBtn = document.createElement("button");
       closeBtn.className = "fullscreen-close-btn";
       closeBtn.textContent = "✕";
       closeBtn.onclick = toggleFullscreen;
-      card.appendChild(closeBtn);
+      cardEl.appendChild(closeBtn);
       try {
-        if (card.requestFullscreen) card.requestFullscreen();
-        else if (card.webkitRequestFullscreen) card.webkitRequestFullscreen();
+        if (cardEl.requestFullscreen) cardEl.requestFullscreen();
+        else if (cardEl.webkitRequestFullscreen)
+          cardEl.webkitRequestFullscreen();
       } catch (e) {}
     }
     setTimeout(function () {
