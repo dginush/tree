@@ -2231,7 +2231,8 @@ body.dark-mode .share-member-row {
   }
 }
 /* ============================================
-   Family Chart - Clean Override
+/* ============================================
+   Family Chart - Final Clean Override
    ============================================ */
 #FamilyChart {
   width: 100% !important;
@@ -2242,6 +2243,16 @@ body.dark-mode .share-member-row {
 
 body.dark-mode #FamilyChart {
   background-color: #1a1a2e !important;
+}
+
+/* קווי חיבור - כחול כהה במצב בהיר */
+.f3 .link path {
+  stroke: #1a3a5c !important;
+  stroke-width: 2px !important;
+}
+
+body.dark-mode .f3 .link path {
+  stroke: #90caf9 !important;
 }
 
 .tree-container {
