@@ -2423,3 +2423,186 @@ body.dark-mode .crop-tool-btn:hover {
   font-size: 0.85em;
   margin-right: 6px;
 }
+/* ============================================
+   Family Map - Pin Markers
+   ============================================ */
+   .map-pin-icon {
+    background: none !important;
+    border: none !important;
+  }
+  
+  .map-pin-wrapper {
+    position: relative;
+    width: 48px;
+    height: 62px;
+  }
+  
+  .map-pin {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 44px;
+    height: 52px;
+    background: var(--pin-color, #1976d2);
+    border-radius: 50% 50% 50% 0;
+    transform: translateX(-50%) rotate(-45deg);
+    border: 3px solid var(--pin-border, #0d47a1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+  }
+  
+  .map-pin:hover {
+    transform: translateX(-50%) rotate(-45deg) scale(1.15);
+  }
+  
+  .map-pin-photo {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    transform: rotate(45deg);
+    border: 2px solid #fff;
+    background: #fff;
+  }
+  
+  .map-pin-shadow {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 14px;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    filter: blur(2px);
+  }
+  
+  /* Popup Styles */
+  .map-custom-popup .leaflet-popup-content-wrapper {
+    border-radius: 14px !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15) !important;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+  
+  .map-custom-popup .leaflet-popup-content {
+    margin: 0 !important;
+    min-width: 200px;
+  }
+  
+  .map-custom-popup .leaflet-popup-tip {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .map-popup {
+    padding: 14px;
+    font-family: "Heebo", sans-serif;
+    direction: rtl;
+  }
+  
+  .map-popup-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .map-popup-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 2px solid #e0e0e0;
+  }
+  
+  .map-popup-name {
+    font-weight: 700;
+    font-size: 1em;
+    color: #1a1a1a;
+  }
+  
+  .map-popup-age {
+    font-size: 0.82em;
+    color: #888;
+  }
+  
+  .map-popup-address {
+    font-size: 0.85em;
+    color: #555;
+    padding: 6px 0;
+    border-top: 1px solid #eee;
+  }
+  
+  .map-popup-detail {
+    font-size: 0.82em;
+    color: #666;
+    margin-top: 4px;
+  }
+  
+  /* Map container responsive */
+  @media (max-width: 768px) {
+    #familyMapContainer {
+      height: 55vh !important;
+    }
+  
+    .map-pin {
+      width: 38px;
+      height: 46px;
+    }
+  
+    .map-pin-photo {
+      width: 26px;
+      height: 26px;
+    }
+  
+    .map-popup {
+      padding: 10px;
+    }
+  }
+  
+  /* Dark mode */
+  body.dark-mode #familyMapContainer {
+    border-color: #444;
+  }
+  
+  body.dark-mode .map-custom-popup .leaflet-popup-content-wrapper {
+    background: #16213e !important;
+    color: #e0e0e0 !important;
+  }
+  
+  body.dark-mode .map-custom-popup .leaflet-popup-tip {
+    background: #16213e !important;
+  }
+  
+  body.dark-mode .map-popup-name {
+    color: #e0e0e0;
+  }
+  
+  body.dark-mode .map-popup-address {
+    color: #aaa;
+    border-top-color: #333;
+  }
+  
+  body.dark-mode .map-popup-detail {
+    color: #999;
+  }
+  
+  body.dark-mode .leaflet-control-zoom a {
+    background: #16213e !important;
+    color: #e0e0e0 !important;
+    border-color: #444 !important;
+  }
+  
+  body.dark-mode .leaflet-control-attribution {
+    background: rgba(22, 33, 62, 0.8) !important;
+    color: #888 !important;
+  }
+  
+  body.dark-mode .leaflet-tile-pane {
+    filter: brightness(0.8) contrast(1.1) saturate(0.8);
+  }

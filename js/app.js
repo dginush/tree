@@ -151,6 +151,11 @@ const App = (() => {
         HistoryManager.render();
       });
     }
+    if (p === "map") {
+      setTimeout(function () {
+        FamilyMap.render();
+      }, 150);
+    }
   }
 
   async function initAfterLogin() {
