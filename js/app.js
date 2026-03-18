@@ -1,6 +1,8 @@
 const App = (() => {
   let members = [],
-    editingId = null;
+    editingId = null,
+    cropper = null,
+    pendingImageSrc = null;
   const RELATION_LABELS = {
     self: "אני",
     father: "אבא",
@@ -259,35 +261,144 @@ const App = (() => {
     }
     var reader = new FileReader();
     reader.onload = function (ev) {
-      var img = new Image();
-      img.onload = function () {
-        var canvas = document.createElement("canvas");
-        var maxSize = 300;
-        var w = img.width,
-          h = img.height;
-        if (w > h) {
-          if (w > maxSize) {
-            h = Math.round((h * maxSize) / w);
-            w = maxSize;
-          }
-        } else {
-          if (h > maxSize) {
-            w = Math.round((w * maxSize) / h);
-            h = maxSize;
-          }
-        }
-        canvas.width = w;
-        canvas.height = h;
-        var ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, w, h);
-        var compressed = canvas.toDataURL("image/jpeg", 0.7);
-        document.getElementById("photoPreviewImg").src = compressed;
-        document.getElementById("photoPreviewImg").style.display = "";
-        document.getElementById("photoPlaceholder").style.display = "none";
-      };
-      img.src = ev.target.result;
+      openCropModal(ev.target.result);
     };
     reader.readAsDataURL(f);
+    // Reset input so same file can be selected again
+    e.target.value = "";
+  }
+
+  function openCropModal(imageSrc) {
+    pendingImageSrc = imageSrc;
+    var cropImage = document.getElementById("cropImage");
+    cropImage.src = imageSrc;
+
+    // Destroy previous cropper if exists
+    if (cropper) {
+      cropper.destroy();
+      cropper = null;
+    }
+
+    openModal("cropModal");
+
+    // Wait for modal to be visible and image to load
+    setTimeout(function () {
+      cropImage.onload = function () {
+        initCropper();
+      };
+      // If image already loaded (cached)
+      if (cropImage.complete && cropImage.naturalWidth > 0) {
+        initCropper();
+      }
+    }, 100);
+  }
+
+  function initCropper() {
+    var cropImage = document.getElementById("cropImage");
+
+    if (cropper) {
+      cropper.destroy();
+      cropper = null;
+    }
+
+    cropper = new Cropper(cropImage, {
+      aspectRatio: 1,
+      viewMode: 1,
+      dragMode: "move",
+      autoCropArea: 0.85,
+      responsive: true,
+      restore: false,
+      guides: true,
+      center: true,
+      highlight: false,
+      cropBoxMovable: true,
+      cropBoxResizable: true,
+      toggleDragModeOnDblclick: false,
+      minCropBoxWidth: 50,
+      minCropBoxHeight: 50,
+    });
+  }
+
+  function applyCrop() {
+    if (!cropper) {
+      showToast("אין תמונה לחיתוך", "error");
+      return;
+    }
+
+    var canvas = cropper.getCroppedCanvas({
+      width: 300,
+      height: 300,
+      imageSmoothingEnabled: true,
+      imageSmoothingQuality: "high",
+    });
+
+    if (!canvas) {
+      showToast("שגיאה בחיתוך", "error");
+      return;
+    }
+
+    var compressed = canvas.toDataURL("image/jpeg", 0.7);
+
+    // Update preview in member form
+    document.getElementById("photoPreviewImg").src = compressed;
+    document.getElementById("photoPreviewImg").style.display = "";
+    document.getElementById("photoPlaceholder").style.display = "none";
+
+    // Show crop existing button
+    var cropBtn = document.getElementById("cropExistingBtn");
+    if (cropBtn) cropBtn.style.display = "";
+
+    // Cleanup
+    closeCropModal();
+    showToast("✂️ תמונה נחתכה בהצלחה");
+  }
+
+  function cancelCrop() {
+    closeCropModal();
+  }
+
+  function closeCropModal() {
+    if (cropper) {
+      cropper.destroy();
+      cropper = null;
+    }
+    pendingImageSrc = null;
+    closeModal("cropModal");
+  }
+
+  function openCropExisting() {
+    var img = document.getElementById("photoPreviewImg");
+    if (!img || img.style.display === "none" || !img.src) {
+      showToast("אין תמונה לחיתוך", "warning");
+      return;
+    }
+    openCropModal(img.src);
+  }
+
+  function cropRotateLeft() {
+    if (cropper) cropper.rotate(-90);
+  }
+
+  function cropRotateRight() {
+    if (cropper) cropper.rotate(90);
+  }
+
+  function cropFlipH() {
+    if (cropper) {
+      var data = cropper.getData();
+      cropper.scaleX(data.scaleX === -1 ? 1 : -1);
+    }
+  }
+
+  function cropFlipV() {
+    if (cropper) {
+      var data = cropper.getData();
+      cropper.scaleY(data.scaleY === -1 ? 1 : -1);
+    }
+  }
+
+  function cropReset() {
+    if (cropper) cropper.reset();
   }
 
   function openAddModal() {
@@ -297,6 +408,8 @@ const App = (() => {
     document.getElementById("memberId").value = "";
     document.getElementById("photoPreviewImg").style.display = "none";
     document.getElementById("photoPlaceholder").style.display = "";
+    var cropBtn = document.getElementById("cropExistingBtn");
+    if (cropBtn) cropBtn.style.display = "none";
     document.getElementById("extraFields").style.display = "none";
     document.getElementById("expandIcon").classList.remove("open");
     document.getElementById("deathDateGroup").style.display = "none";
@@ -337,9 +450,13 @@ const App = (() => {
       document.getElementById("photoPreviewImg").src = m.photo;
       document.getElementById("photoPreviewImg").style.display = "";
       document.getElementById("photoPlaceholder").style.display = "none";
+      var cropBtn = document.getElementById("cropExistingBtn");
+      if (cropBtn) cropBtn.style.display = "";
     } else {
       document.getElementById("photoPreviewImg").style.display = "none";
       document.getElementById("photoPlaceholder").style.display = "";
+      var cropBtn2 = document.getElementById("cropExistingBtn");
+      if (cropBtn2) cropBtn2.style.display = "none";
     }
 
     popFather(m.parentId);
@@ -1010,6 +1127,15 @@ const App = (() => {
     saveTreeName: saveTreeName,
     restoreBackup: restoreBackup,
     toggleDarkMode: toggleDarkMode,
+    // Crop functions
+    applyCrop: applyCrop,
+    cancelCrop: cancelCrop,
+    openCropExisting: openCropExisting,
+    cropRotateLeft: cropRotateLeft,
+    cropRotateRight: cropRotateRight,
+    cropFlipH: cropFlipH,
+    cropFlipV: cropFlipV,
+    cropReset: cropReset,
     getMembers: function () {
       return members;
     },

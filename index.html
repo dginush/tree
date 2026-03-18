@@ -14,6 +14,12 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#2E7D32" />
     <link rel="manifest" href="/manifest.json" />
+    <!-- Cropper.js -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
     <!-- Family Chart CSS - MUST be before styles.css -->
     <link
       rel="stylesheet"
@@ -191,7 +197,14 @@
               <span class="sync-dot synced"></span
               ><span class="sync-text">מסונכרן</span>
             </div>
-            <button class="header-btn" id="darkModeBtn" onclick="App.toggleDarkMode()" title="">🌙</button>
+            <button
+              class="header-btn"
+              id="darkModeBtn"
+              onclick="App.toggleDarkMode()"
+              title=""
+            >
+              🌙
+            </button>
             <button
               class="header-btn"
               onclick="PushNotifications.requestPermission()"
@@ -606,21 +619,29 @@
         <form id="memberForm" onsubmit="App.saveMember(event)">
           <input type="hidden" id="memberId" />
           <div class="photo-upload-section">
-            <div
-              class="photo-preview"
-              onclick="document.getElementById('photoInput').click()"
-            >
-              <span class="placeholder" id="photoPlaceholder">📷</span
-              ><img id="photoPreviewImg" style="display: none" />
-              <div class="overlay">📷</div>
+            <div class="photo-upload-wrapper">
+              <label class="photo-preview" for="photoInput">
+                <img id="photoPreviewImg" src="" style="display: none" />
+                <span class="placeholder" id="photoPlaceholder">📷</span>
+                <span class="overlay">📷</span>
+              </label>
+              <input
+                type="file"
+                id="photoInput"
+                accept="image/*"
+                hidden
+                onchange="App.handlePhotoUpload(event)"
+              />
+              <button
+                type="button"
+                class="btn btn-outline btn-sm crop-existing-btn"
+                id="cropExistingBtn"
+                onclick="App.openCropExisting()"
+                style="display: none"
+              >
+                ✂️ חיתוך
+              </button>
             </div>
-            <input
-              type="file"
-              id="photoInput"
-              accept="image/*"
-              style="display: none"
-              onchange="App.handlePhotoUpload(event)"
-            />
           </div>
 
           <div class="form-section">
@@ -998,7 +1019,64 @@
         </div>
       </div>
     </div>
-
+    <!-- Crop Modal -->
+    <div class="modal-overlay" id="cropModal">
+      <div class="modal" style="max-width: 500px">
+        <div class="modal-header">
+          <h3 class="modal-title">✂️ חיתוך תמונה</h3>
+          <button class="modal-close" onclick="App.cancelCrop()">✕</button>
+        </div>
+        <div class="crop-container">
+          <img
+            id="cropImage"
+            src=""
+            alt="crop"
+            style="max-width: 100%; display: block"
+          />
+        </div>
+        <div class="crop-actions">
+          <button
+            class="crop-tool-btn"
+            onclick="App.cropRotateLeft()"
+            title="סובב שמאלה"
+          >
+            ↶
+          </button>
+          <button
+            class="crop-tool-btn"
+            onclick="App.cropRotateRight()"
+            title="סובב ימינה"
+          >
+            ↷
+          </button>
+          <button
+            class="crop-tool-btn"
+            onclick="App.cropFlipH()"
+            title="הפוך אופקית"
+          >
+            ↔
+          </button>
+          <button
+            class="crop-tool-btn"
+            onclick="App.cropFlipV()"
+            title="הפוך אנכית"
+          >
+            ↕
+          </button>
+          <button class="crop-tool-btn" onclick="App.cropReset()" title="איפוס">
+            ↺
+          </button>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="App.cancelCrop()">
+            ביטול
+          </button>
+          <button class="btn btn-primary" onclick="App.applyCrop()">
+            ✂️ חיתוך ושמירה
+          </button>
+        </div>
+      </div>
+    </div>
     <!-- Status Bar -->
     <footer
       style="

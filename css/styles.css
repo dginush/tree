@@ -2291,3 +2291,118 @@ body.dark-mode #FamilyChart {
   margin: 0 !important;
   border-radius: 8px;
 }
+/* ============================================
+   Image Crop Modal
+   ============================================ */
+.photo-upload-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.crop-existing-btn {
+  font-size: 0.8em !important;
+  padding: 4px 12px !important;
+}
+
+.crop-container {
+  max-height: 400px;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: #1a1a1a;
+  margin-bottom: 16px;
+}
+
+.crop-container img {
+  max-width: 100%;
+  display: block;
+}
+
+.crop-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.crop-tool-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  font-size: 1.2em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.crop-tool-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+/* Cropper.js overrides - ריבוע עם פינות מעוגלות */
+.cropper-view-box,
+.cropper-face {
+  border-radius: 12px !important;
+}
+
+.cropper-view-box {
+  outline: 3px solid var(--primary-light) !important;
+  outline-color: rgba(76, 175, 80, 0.75) !important;
+}
+
+.cropper-line {
+  background-color: var(--primary-light) !important;
+}
+
+.cropper-point {
+  background-color: var(--primary) !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+}
+
+.cropper-modal {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Dark mode */
+body.dark-mode .crop-container {
+  background: #0a0a0a;
+}
+
+body.dark-mode .crop-tool-btn {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  border-color: #444;
+}
+
+body.dark-mode .crop-tool-btn:hover {
+  background: #4caf50;
+  color: #fff;
+  border-color: #4caf50;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .crop-container {
+    max-height: 300px;
+  }
+
+  .crop-tool-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1em;
+  }
+
+  .crop-actions {
+    gap: 6px;
+  }
+}
