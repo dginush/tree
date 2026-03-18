@@ -322,8 +322,8 @@ const App = (() => {
       return;
     }
     var canvas = cropper.getCroppedCanvas({
-      width: 600,
-      height: 600,
+      width: 800,
+      height: 800,
       imageSmoothingEnabled: true,
       imageSmoothingQuality: "high",
     });
@@ -331,7 +331,7 @@ const App = (() => {
       showToast("שגיאה בחיתוך", "error");
       return;
     }
-    var compressed = canvas.toDataURL("image/jpeg", 0.85);
+    var compressed = canvas.toDataURL("image/jpeg", 0.9);
     document.getElementById("photoPreviewImg").src = compressed;
     document.getElementById("photoPreviewImg").style.display = "";
     document.getElementById("photoPlaceholder").style.display = "none";
