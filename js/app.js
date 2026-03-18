@@ -3,6 +3,7 @@ const App = (() => {
     editingId = null,
     cropper = null,
     pendingImageSrc = null;
+
   const RELATION_LABELS = {
     self: "אני",
     father: "אבא",
@@ -252,6 +253,8 @@ const App = (() => {
     if (sunsetGroup) sunsetGroup.style.display = isDeceased ? "" : "none";
   }
 
+  // === Photo Crop Functions ===
+
   function handlePhotoUpload(e) {
     var f = e.target.files[0];
     if (!f) return;
@@ -264,7 +267,6 @@ const App = (() => {
       openCropModal(ev.target.result);
     };
     reader.readAsDataURL(f);
-    // Reset input so same file can be selected again
     e.target.value = "";
   }
 
@@ -273,7 +275,6 @@ const App = (() => {
     var cropImage = document.getElementById("cropImage");
     cropImage.src = imageSrc;
 
-    // Destroy previous cropper if exists
     if (cropper) {
       cropper.destroy();
       cropper = null;
@@ -281,12 +282,10 @@ const App = (() => {
 
     openModal("cropModal");
 
-    // Wait for modal to be visible and image to load
     setTimeout(function () {
       cropImage.onload = function () {
         initCropper();
       };
-      // If image already loaded (cached)
       if (cropImage.complete && cropImage.naturalWidth > 0) {
         initCropper();
       }
@@ -295,12 +294,10 @@ const App = (() => {
 
   function initCropper() {
     var cropImage = document.getElementById("cropImage");
-
     if (cropper) {
       cropper.destroy();
       cropper = null;
     }
-
     cropper = new Cropper(cropImage, {
       aspectRatio: 1,
       viewMode: 1,
@@ -324,31 +321,22 @@ const App = (() => {
       showToast("אין תמונה לחיתוך", "error");
       return;
     }
-
     var canvas = cropper.getCroppedCanvas({
-      width: 300,
-      height: 300,
+      width: 600,
+      height: 600,
       imageSmoothingEnabled: true,
       imageSmoothingQuality: "high",
     });
-
     if (!canvas) {
       showToast("שגיאה בחיתוך", "error");
       return;
     }
-
-    var compressed = canvas.toDataURL("image/jpeg", 0.7);
-
-    // Update preview in member form
+    var compressed = canvas.toDataURL("image/jpeg", 0.85);
     document.getElementById("photoPreviewImg").src = compressed;
     document.getElementById("photoPreviewImg").style.display = "";
     document.getElementById("photoPlaceholder").style.display = "none";
-
-    // Show crop existing button
     var cropBtn = document.getElementById("cropExistingBtn");
     if (cropBtn) cropBtn.style.display = "";
-
-    // Cleanup
     closeCropModal();
     showToast("✂️ תמונה נחתכה בהצלחה");
   }
@@ -378,28 +366,26 @@ const App = (() => {
   function cropRotateLeft() {
     if (cropper) cropper.rotate(-90);
   }
-
   function cropRotateRight() {
     if (cropper) cropper.rotate(90);
   }
-
   function cropFlipH() {
     if (cropper) {
       var data = cropper.getData();
       cropper.scaleX(data.scaleX === -1 ? 1 : -1);
     }
   }
-
   function cropFlipV() {
     if (cropper) {
       var data = cropper.getData();
       cropper.scaleY(data.scaleY === -1 ? 1 : -1);
     }
   }
-
   function cropReset() {
     if (cropper) cropper.reset();
   }
+
+  // === Modal Functions ===
 
   function openAddModal() {
     editingId = null;
@@ -516,7 +502,7 @@ const App = (() => {
     }
 
     var pi = document.getElementById("photoPreviewImg");
-    var photo = pi.style.display !== "none" ? pi.src : "";
+    var photoSrc = pi.style.display !== "none" ? pi.src : "";
 
     var birthSunsetEl = document.getElementById("birthSunset");
     var birthBeforeSunset = birthSunsetEl
@@ -543,12 +529,21 @@ const App = (() => {
 
     var extraVisible =
       document.getElementById("extraFields")?.style.display !== "none";
-
     var existingMember = editingId
       ? members.find(function (m) {
           return m.id === editingId;
         })
       : null;
+
+    // קביעת ערך התמונה
+    var photo = "";
+    if (photoSrc && photoSrc.startsWith("data:image")) {
+      photo = "__PENDING_UPLOAD__";
+    } else if (photoSrc && photoSrc.startsWith("http")) {
+      photo = photoSrc;
+    } else {
+      photo = "";
+    }
 
     var d = {
       id: editingId || generateId(),
@@ -600,6 +595,24 @@ const App = (() => {
         : new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+
+    // העלאת תמונה ל-Storage אם יש תמונה חדשה
+    if (d.photo === "__PENDING_UPLOAD__" && photoSrc.startsWith("data:image")) {
+      showToast("⏳ מעלה תמונה...", "warning");
+      var treeId = Sharing.getTreeId();
+      var uploadedURL = await FirebaseDB.uploadMemberPhoto(
+        treeId,
+        d.id,
+        photoSrc
+      );
+      if (uploadedURL) {
+        d.photo = uploadedURL;
+      } else {
+        d.photo = "";
+        showToast("שגיאה בהעלאת תמונה", "error");
+      }
+    }
+
     if (d.spouseId) {
       var sp = members.find(function (m) {
         return m.id === d.spouseId;
@@ -661,6 +674,15 @@ const App = (() => {
       return m.id === id;
     });
     var delName = deleted ? deleted.firstName + " " + deleted.lastName : "";
+
+    // מחיקת תמונה מ-Storage
+    if (deleted && deleted.photo && deleted.photo.startsWith("http")) {
+      var treeId = Sharing.getTreeId();
+      FirebaseDB.deleteMemberPhoto(treeId, id).catch(function (e) {
+        console.log("Photo delete warning:", e);
+      });
+    }
+
     for (var i = 0; i < members.length; i++) {
       var m = members[i];
       var ch = false;
@@ -1094,13 +1116,56 @@ const App = (() => {
     }
   })();
 
-  (function () {
-    if (localStorage.getItem("darkMode") === "1") {
-      document.body.classList.add("dark-mode");
-      var btn = document.getElementById("darkModeBtn");
-      if (btn) btn.textContent = "☀️";
+  // === Migration Function ===
+
+  async function migratePhotosToStorage() {
+    var treeId = Sharing.getTreeId();
+    if (!treeId) {
+      showToast("אין עץ נבחר", "error");
+      return;
     }
-  })();
+    if (
+      !confirm(
+        "להעביר את כל התמונות הקיימות ל-Firebase Storage?\nזה עשוי לקחת כמה דקות."
+      )
+    )
+      return;
+
+    var count = 0;
+    var errors = 0;
+    for (var i = 0; i < members.length; i++) {
+      var m = members[i];
+      if (m.photo && m.photo.startsWith("data:image")) {
+        showToast(
+          "⏳ מעלה תמונה " + (count + 1) + " - " + m.firstName + "...",
+          "warning"
+        );
+        var url = await FirebaseDB.uploadMemberPhoto(treeId, m.id, m.photo);
+        if (url) {
+          m.photo = url;
+          await FirebaseDB.saveMember(m);
+          count++;
+        } else {
+          errors++;
+        }
+      }
+    }
+
+    if (count > 0) {
+      showToast(
+        "✅ הועלו " +
+          count +
+          " תמונות ל-Storage!" +
+          (errors ? " (" + errors + " שגיאות)" : ""),
+        "success"
+      );
+      rCP();
+    } else if (errors > 0) {
+      showToast("שגיאה בהעלאת " + errors + " תמונות", "error");
+    } else {
+      showToast("אין תמונות Base64 להמרה - הכל כבר ב-Storage! ✅", "success");
+    }
+  }
 
   function rCP() {
     var a =
@@ -1155,6 +1220,7 @@ const App = (() => {
     saveTreeName: saveTreeName,
     restoreBackup: restoreBackup,
     toggleDarkMode: toggleDarkMode,
+    migratePhotosToStorage: migratePhotosToStorage,
     // Crop functions
     applyCrop: applyCrop,
     cancelCrop: cancelCrop,
