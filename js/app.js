@@ -541,6 +541,10 @@ const App = (() => {
     var fatherVal = document.getElementById("fatherId")?.value || null;
     var motherVal = document.getElementById("motherId")?.value || null;
 
+    var extraVisible = document.getElementById("extraFields")?.style.display !== "none";
+
+    var existingMember = editingId ? members.find(function(m) { return m.id === editingId; }) : null;
+    
     var d = {
       id: editingId || generateId(),
       firstName: document.getElementById("firstName").value.trim(),
@@ -553,24 +557,17 @@ const App = (() => {
       birthBeforeSunset: birthBeforeSunset,
       hebrewBirthDate: hebrewBirthDate,
       photo: photo,
-      spouseId: document.getElementById("spouseId")?.value || null,
-      status: document.getElementById("status")?.value || "alive",
-      deathDate: deathDateVal || null,
+      spouseId: extraVisible ? (document.getElementById("spouseId")?.value || null) : (existingMember?.spouseId || null),
+      status: extraVisible ? (document.getElementById("status")?.value || "alive") : (existingMember?.status || "alive"),
+      deathDate: extraVisible ? (deathDateVal || null) : (existingMember?.deathDate || null),
       deathBeforeSunset: deathBeforeSunset,
-      hebrewDeathDate: hebrewDeathDate,
-      birthPlace: document.getElementById("birthPlace")?.value?.trim() || "",
-      phone: document.getElementById("phone")?.value?.trim() || "",
-      email: document.getElementById("email")?.value?.trim() || "",
-      address: document.getElementById("address")?.value?.trim() || "",
-      occupation: document.getElementById("occupation")?.value?.trim() || "",
-      notes: document.getElementById("notes")?.value?.trim() || "",
-      createdAt: editingId
-        ? members.find(function (m) {
-            return m.id === editingId;
-          })?.createdAt || new Date().toISOString()
-        : new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+      hebrewDeathDate: extraVisible ? hebrewDeathDate : (existingMember?.hebrewDeathDate || ""),
+      birthPlace: extraVisible ? (document.getElementById("birthPlace")?.value?.trim() || "") : (existingMember?.birthPlace || ""),
+      phone: extraVisible ? (document.getElementById("phone")?.value?.trim() || "") : (existingMember?.phone || ""),
+      email: extraVisible ? (document.getElementById("email")?.value?.trim() || "") : (existingMember?.email || ""),
+      address: extraVisible ? (document.getElementById("address")?.value?.trim() || "") : (existingMember?.address || ""),
+      occupation: extraVisible ? (document.getElementById("occupation")?.value?.trim() || "") : (existingMember?.occupation || ""),
+      notes: extraVisible ? (document.getElementById("notes")?.value?.trim() || "") : (existingMember?.notes || ""),
 
     if (d.spouseId) {
       var sp = members.find(function (m) {
