@@ -96,7 +96,53 @@
         </button>
       </div>
     </div>
-
+    <!-- Email Verification Screen -->
+    <div class="login-screen" id="verifyScreen" style="display: none">
+      <div class="login-card" style="text-align: center">
+        <div class="login-logo">📧</div>
+        <h2 class="login-title">אמתו את המייל</h2>
+        <p class="login-subtitle" id="verifyEmailText">
+          שלחנו מייל אימות. בדקו את תיבת הדואר.
+        </p>
+        <div
+          style="
+            background: #fff8e1;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 20px 0;
+            font-size: 0.9em;
+          "
+        >
+          <p>📬 לא קיבלתם? בדקו בתיקיית <strong>ספאם</strong></p>
+        </div>
+        <button
+          class="login-btn primary"
+          onclick="Auth.resendVerification()"
+          id="resendBtn"
+        >
+          📤 שלח שוב
+        </button>
+        <button
+          class="login-btn secondary"
+          onclick="Auth.checkVerification()"
+          style="margin-top: 8px"
+        >
+          ✅ אימתתי - המשך
+        </button>
+        <div
+          id="verifyError"
+          class="login-error"
+          style="display: none; margin-top: 12px"
+        ></div>
+        <button
+          class="login-link"
+          onclick="Auth.logout()"
+          style="margin-top: 16px"
+        >
+          🚪 התנתקות
+        </button>
+      </div>
+    </div>
     <!-- Tree Select Screen -->
     <div id="treeSelectScreen" style="display: none">
       <div class="tree-select-screen">

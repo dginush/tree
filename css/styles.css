@@ -2406,3 +2406,20 @@ body.dark-mode .crop-tool-btn:hover {
     gap: 6px;
   }
 }
+/* ============================================
+   Email Verification Screen
+   ============================================ */
+#verifyScreen .login-card {
+  max-width: 440px;
+}
+
+#resendBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+#resendBtn .resend-timer {
+  font-size: 0.85em;
+  margin-right: 6px;
+}
