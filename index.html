@@ -15,8 +15,11 @@
     <meta name="theme-color" content="#2E7D32" />
     <link rel="manifest" href="/manifest.json" />
     <!-- Leaflet Map -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Cropper.js -->
     <link
       rel="stylesheet"
@@ -278,6 +281,8 @@
                   ><small id="userEmail">-</small>
                 </div>
                 <hr />
+                <button onclick="Sharing.openTreeSwitcher()">🌳 החלף עץ</button>
+                <hr />
                 <button onclick="App.exportData()">📤 ייצוא</button>
                 <button onclick="document.getElementById('importFile').click()">
                   📥 ייבוא
@@ -331,26 +336,22 @@
             🎂 ימי הולדת
           </div>
           <div
-          class="nav-tab"
-          data-page="events"
-          onclick="App.switchPage('events')"
-        >
-          🎉 אירועים
-        </div>
-        <div
-          class="nav-tab"
-          data-page="map"
-          onclick="App.switchPage('map')"
-        >
-          🗺️ מפה
-        </div>
-        <div
-          class="nav-tab"
-          data-page="history"
-          onclick="App.switchPage('history')"
-        >
-          📜 היסטוריה
-        </div>
+            class="nav-tab"
+            data-page="events"
+            onclick="App.switchPage('events')"
+          >
+            🎉 אירועים
+          </div>
+          <div class="nav-tab" data-page="map" onclick="App.switchPage('map')">
+            🗺️ מפה
+          </div>
+          <div
+            class="nav-tab"
+            data-page="history"
+            onclick="App.switchPage('history')"
+          >
+            📜 היסטוריה
+          </div>
         </nav>
       </header>
 
@@ -653,16 +654,41 @@
           <div class="card">
             <div class="card-header">
               <h2 class="card-title">🗺️ מפת בני משפחה</h2>
-              <div style="display:flex;gap:8px;align-items:center">
-                <span id="mapMemberCount" style="font-size:0.85em;color:var(--text-muted)"></span>
-                <button class="btn btn-outline btn-sm" onclick="FamilyMap.fitAll()">📍 התאם הכל</button>
-                <button class="btn btn-outline btn-sm" onclick="FamilyMap.render()">🔄 רענן</button>
+              <div style="display: flex; gap: 8px; align-items: center">
+                <span
+                  id="mapMemberCount"
+                  style="font-size: 0.85em; color: var(--text-muted)"
+                ></span>
+                <button
+                  class="btn btn-outline btn-sm"
+                  onclick="FamilyMap.fitAll()"
+                >
+                  📍 התאם הכל
+                </button>
+                <button
+                  class="btn btn-outline btn-sm"
+                  onclick="FamilyMap.render()"
+                >
+                  🔄 רענן
+                </button>
               </div>
             </div>
-            <div id="familyMapContainer" style="height:65vh;border-radius:var(--radius);overflow:hidden;border:2px solid var(--border);position:relative;">
-              <div id="familyMap" style="width:100%;height:100%;z-index:1"></div>
+            <div
+              id="familyMapContainer"
+              style="
+                height: 65vh;
+                border-radius: var(--radius);
+                overflow: hidden;
+                border: 2px solid var(--border);
+                position: relative;
+              "
+            >
+              <div
+                id="familyMap"
+                style="width: 100%; height: 100%; z-index: 1"
+              ></div>
             </div>
-            <div id="mapNoMembers" class="empty-state" style="display:none">
+            <div id="mapNoMembers" class="empty-state" style="display: none">
               <div class="icon">🗺️</div>
               <h3>אין כתובות להציג</h3>
               <p>הוסיפו כתובות לבני המשפחה בשדות הנוספים</p>
@@ -1067,7 +1093,21 @@
         <div id="birthdayDetailContent"></div>
       </div>
     </div>
-
+    <!-- Tree Switcher Modal -->
+    <div class="modal-overlay" id="treeSwitchModal">
+      <div class="modal" style="max-width: 520px">
+        <div class="modal-header">
+          <h3 class="modal-title">🌳 העצים שלי</h3>
+          <button
+            class="modal-close"
+            onclick="App.closeModal('treeSwitchModal')"
+          >
+            ✕
+          </button>
+        </div>
+        <div id="treeSwitchContent"></div>
+      </div>
+    </div>
     <!-- Tree Name Edit Modal -->
     <div class="modal-overlay" id="treeNameModal">
       <div class="modal" style="max-width: 400px">

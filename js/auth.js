@@ -209,6 +209,21 @@ const Auth = (() => {
         throw new Error("createTree returned null");
       }
       await Sharing.renameTree(n);
+      // Update user profile with new tree
+      await FirebaseDB.getDb()
+        .collection("userProfiles")
+        .doc(u.uid)
+        .set(
+          {
+            currentTreeId: Sharing.getTreeId(),
+            trees: firebase.firestore.FieldValue.arrayUnion({
+              treeId: Sharing.getTreeId(),
+              name: n,
+              role: "owner",
+            }),
+          },
+          { merge: true }
+        );
       document.getElementById("treeSelectScreen").style.display = "none";
       document.getElementById("appContainer").style.display = "";
       var tn = document.getElementById("currentTreeName");
